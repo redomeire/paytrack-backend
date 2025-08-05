@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\BaseController;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends BaseController
 {
@@ -36,7 +37,7 @@ class AuthController extends BaseController
     {
         if(Auth::attempt(['email' => $request->email, 'password' => $request->password])){ 
             $user = Auth::user(); 
-            $success['token'] =  $user->createToken('API Personal Access Token', ['read-profile'])->accessToken; 
+            $success['token'] =  $user->createToken('API Personal Access Token')->accessToken; 
             $success['name'] =  $user->name;
    
             return $this->sendResponse($success, 'User login successfully.');
