@@ -2,65 +2,80 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\bill_categories;
+use App\Http\Controllers\BaseController;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\Storebill_categoriesRequest;
 use App\Http\Requests\Updatebill_categoriesRequest;
 
-class BillCategoriesController extends Controller
+class BillCategoriesController extends BaseController
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function getBillCategories()
     {
-        //
+        $bill_categories = bill_categories::all();
+        return $this->sendResponse($bill_categories, 'Bill categories retrieved successfully.');
+    }
+    
+    public function create(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+            'description' => 'nullable|string|max:500',
+            'color' => 'nullable|string|size:7|regex:/^#[0-9A-Fa-f]{6}$/',
+            'icon' => 'nullable|string|max:100',
+            'is_default' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors(), 422);
+        }
+
+        $data = $request->all();
+        $bill_category = bill_categories::create($data);
+        return $this->sendResponse($bill_category, 'Bill category created successfully.', 201);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function detail($id)
     {
-        //
+        $bill_category = bill_categories::find($id);
+
+        if (!$bill_category) {
+            return $this->sendError('Bill category not found', [], 404);
+        }
+        return $this->sendResponse($bill_category, 'Bill category retrieved successfully.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Storebill_categoriesRequest $request)
+    public function update(Request $request, $id)
     {
-        //
+        $bill_categories = bill_categories::find($id);
+        if (!$bill_categories) {
+            return $this->sendError('Bill category not found', [], 404);
+        }
+        
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:100',
+            'description' => 'nullable|string|max:500',
+            'color' => 'nullable|string|size:7|regex:/^#[0-9A-Fa-f]{6}$/',
+            'icon' => 'nullable|string|max:100',
+            'is_default' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors(), 422);
+        }
+
+        $bill_categories->update($request->all());
+        return $this->sendResponse($bill_categories, 'Bill category updated successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(bill_categories $bill_categories)
+    public function delete($id)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(bill_categories $bill_categories)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Updatebill_categoriesRequest $request, bill_categories $bill_categories)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(bill_categories $bill_categories)
-    {
-        //
+        $bill_category = bill_categories::find($id);
+        if (!$bill_category) {
+            return $this->sendError('Bill category not found', [], 404);
+        }
+        $bill_category->delete();
+        return $this->sendResponse(null, 'Bill category deleted successfully.');        
     }
 }
