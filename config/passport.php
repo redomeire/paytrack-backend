@@ -11,9 +11,9 @@ return [
     | authenticating users. This value should correspond with one of your
     | guards that is already present in your "auth" configuration file.
     |
-    */
+     */
 
-    'guard' => 'web',
+    'guard' => 'api',
 
     /*
     |--------------------------------------------------------------------------
@@ -24,7 +24,7 @@ return [
     | your application. By default, the keys are stored as local files but
     | can be set via environment variables when that is more convenient.
     |
-    */
+     */
 
     'private_key' => env('PASSPORT_PRIVATE_KEY'),
 
@@ -39,7 +39,7 @@ return [
     | database connection. If you wish to use a different connection you
     | may specify the configured name of the database connection here.
     |
-    */
+     */
 
     'connection' => env('PASSPORT_CONNECTION'),
 

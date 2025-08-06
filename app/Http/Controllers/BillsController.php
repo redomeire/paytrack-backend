@@ -2,65 +2,145 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\BaseController;
 use App\Models\bills;
-use App\Http\Requests\StorebillsRequest;
-use App\Http\Requests\UpdatebillsRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
-class BillsController extends Controller
+class BillsController extends BaseController
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $bills = bills::all();
+        return $this->sendResponse(
+            $bills,
+            'Bills retrieved successfully.'
+        );
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request)
     {
-        //
+        try {
+            $userId = $request->user()->id;
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'name' => 'required|string|max:100',
+                    'bill_category_id' => 'required|exists:bill_categories,id',
+                    'description' => 'nullable|string|max:255',
+                    'amount' => 'required|numeric|min:0',
+                    'currency' => 'required|string|size:3',
+                    'billing_type' => 'required|in:fixed,recurring',
+                    'frequency' => 'required|in:monthly,annual,custom',
+                    'custom_frequency_days' => 'required_if:frequency,custom|integer|min:1',
+                    'first_due_date' => 'required|date',
+                    'next_due_date' => 'required|date|after_or_equal:first_due_date',
+                    'last_paid_date' => 'nullable|date|after_or_equal:first_due_date',
+                    'auto_advance' => 'boolean',
+                    'notes' => 'nullable|string|max:500',
+                    'attachment_url' => 'nullable|url|max:255',
+                    'due_date' => 'required|date',
+                ]
+            );
+
+            if ($validator->fails()) {
+                return $this->sendError(
+                    'Validation Error',
+                    $validator->errors()
+                );
+            }
+
+            $data = $request->all();
+            $bill = bills::create(
+                array_merge($data, ['user_id' => $userId])
+            );
+            return $this->sendResponse(
+                $bill,
+                'Bill created successfully.',
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->sendError(
+                $e->getMessage(),
+            );
+        }
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StorebillsRequest $request)
+    public function detail($id)
     {
-        //
+        $bill = bills::find($id);
+
+        if (!$bill) {
+            return $this->sendError(
+                'Bill not found',
+                null,
+                404
+            );
+        }
+        return $this->sendResponse(
+            $bill,
+            'Bill retrieved successfully.'
+        );
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(bills $bills)
+    public function update(Request $request, $id)
     {
-        //
+        $bill = bills::find($id);
+        if (!$bill) {
+            return $this->sendError(
+                'Bill not found',
+                null,
+                404
+            );
+        }
+
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'name' => 'sometimes|required|string|max:100',
+                'user_id' => 'sometimes|required|exists:users,id',
+                'bill_category_id' => 'sometimes|required|exists:bill_categories,id',
+                'description' => 'nullable|string|max:255',
+                'amount' => 'sometimes|required|numeric|min:0',
+                'currency' => 'sometimes|required|string|size:3',
+                'billing_type' => 'sometimes|required|in:fixed,recurring',
+                'frequency' => 'sometimes|required|in:monthly,annual,custom',
+                'custom_frequency_days' => 'required_if:frequency,custom|integer|min:1',
+                'first_due_date' => 'sometimes|required|date',
+                'next_due_date' => 'sometimes|required|date|after_or_equal:first_due_date',
+                'last_paid_date' => 'nullable|date|after_or_equal:first_due_date',
+                'auto_advance' => 'boolean',
+                'notes' => 'nullable|string|max:500',
+                'attachment_url' => 'nullable|url|max:255',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return $this->sendError(
+                'Validation Error',
+                $validator->errors()
+            );
+        }
+
+        $data = $request->all();
+
+        $bill->update($data);
+        return $this->sendResponse(
+            $bill,
+            'Bill updated successfully.'
+        );
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(bills $bills)
+    public function delete($id)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdatebillsRequest $request, bills $bills)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(bills $bills)
-    {
-        //
+        $bill = bills::find($id);
+        if (!$bill) {
+            return $this->sendError(
+                'Bill not found',
+                null,
+                404
+            );
+        }
+        $bill->delete();
+        return $this->sendResponse(
+            null,
+            'Bill deleted successfully.'
+        );
     }
 }
