@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\bills;
+use App\Models\notification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class bill_categories extends Model
+class notification_type extends Model
 {
-    /** @use HasFactory<\Database\Factories\BillCategoriesFactory> */
     use HasFactory;
 
     protected $keyType = 'string';
@@ -18,14 +17,6 @@ class bill_categories extends Model
     protected $fillable = [
         'name',
         'description',
-        'color',
-        'icon',
-        'is_default',
-    ];
-
-    protected $hidden = [
-        'created_at',
-        'updated_at',
     ];
 
     public static function boot()
@@ -37,8 +28,8 @@ class bill_categories extends Model
         });
     }
 
-    public function bills()
+    public function notifications()
     {
-        return $this->hasMany(bills::class);
+        return $this->hasMany(notification::class);
     }
 }
