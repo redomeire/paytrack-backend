@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class payments extends Model
 {
@@ -12,4 +13,24 @@ class payments extends Model
 
     protected $keyType = 'string';
     public $incrementing = false;
+
+    protected $fillable = [
+        'bill_id',
+        'amount',
+        'currency',
+        'paid_date',
+        'due_date',
+        'payment_method',
+        'payment_reference',
+        'notes',
+    ];
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->{$model->getKeyName()} = (string) Str::uuid();
+        });
+    }
 }

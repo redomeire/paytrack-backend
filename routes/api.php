@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillCategoriesController;
 use App\Http\Controllers\BillsController;
+use App\Http\Controllers\PaymentsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -24,6 +25,13 @@ Route::prefix('v1')->group(function () {
                 Route::put('/{id}', [BillCategoriesController::class, 'update']);
                 Route::delete('/{id}', [BillCategoriesController::class, 'delete']);
             });
+        });
+        Route::prefix('payments')->group(function () {
+            Route::get('/', [PaymentsController::class, 'index']);
+            Route::post('/', [PaymentsController::class, 'store']);
+            Route::get('/{id}', [PaymentsController::class, 'detail']);
+            Route::put('/{id}', [PaymentsController::class, 'update']);
+            Route::delete('/{id}', [PaymentsController::class, 'delete']);
         });
     });
 });
