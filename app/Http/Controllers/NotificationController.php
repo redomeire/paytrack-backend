@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\BaseController;
 use App\Models\notification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class NotificationController extends BaseController
@@ -14,11 +13,23 @@ class NotificationController extends BaseController
     {
         $userId = $request->user()->id;
         try {
-            $notifications = DB::table('notifications')
-                ->join('notification_reads', 'notifications.id', '=', 'notification_reads.notification_id')
+            // $notifications = DB::table('notifications')
+            //     ->join('notification_reads', 'notifications.id', '=', 'notification_reads.notification_id')
+            //     ->join('users', 'notification_reads.user_id', '=', 'users.id')
+            //     ->where('users.id', $userId)
+            //     ->get();
+            $notifications = notification::join('notification_reads', 'notifications.id', '=', 'notification_reads.notification_id')
                 ->join('users', 'notification_reads.user_id', '=', 'users.id')
                 ->where('users.id', $userId)
-                ->get();
+                ->select([
+                    'notifications.id as id',
+                    'notification_reads.id as notification_read_id',
+                    'users.id as user_id',
+                    'notifications.title',
+                    'notification_reads.read_at',
+                ])
+                ->get()->makeHidden(['password', 'remember_token']);
+
             return $this->sendResponse($notifications, 'Notifications retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError($e->getMessage());
@@ -43,11 +54,30 @@ class NotificationController extends BaseController
             return $this->sendError($e->getMessage());
         }
     }
-    public function show($id)
+    public function detail(Request $request, $id)
     {
+        $userId = $request->user()->id;
         try {
-            $notification = notification::with(['bill', 'notificationType', 'notificationReads'])
-                ->findOrFail($id);
+            // $notification = notification::with(['notificationReads' => function ($query) use ($userId) {
+            //     $query
+            //         ->where('user_id', $userId);
+            // }])
+            //     ->where('id', $id)
+            //     ->first();
+            $notification = notification::join('notification_reads', 'notifications.id', '=', 'notification_reads.notification_id')
+                ->join('users', 'notification_reads.user_id', '=', 'users.id')
+                ->where('notifications.id', $id)
+                ->where('users.id', $userId)
+                ->select([
+                    'notifications.id as id',
+                    'notification_reads.id as notification_read_id',
+                    'users.id as user_id',
+                    'notifications.title',
+                    'notifications.message',
+                    'notification_reads.is_read',
+                ])
+                ->firstOrFail();
+
             return $this->sendResponse($notification, 'Notification retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Notification not found', _, 404);

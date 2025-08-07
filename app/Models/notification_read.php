@@ -22,6 +22,10 @@ class notification_read extends Model
         'is_read',
     ];
 
+    protected $casts = [
+        'is_read' => 'boolean',
+    ];
+
     public static function boot()
     {
         parent::boot();

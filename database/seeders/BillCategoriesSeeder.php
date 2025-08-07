@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\bill_categories;
 use Illuminate\Database\Seeder;
 
 class BillCategoriesSeeder extends Seeder
@@ -12,6 +12,23 @@ class BillCategoriesSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        $categories = [
+            'Electricity',
+            'Water',
+            'Internet',
+            'Gas',
+            'Phone',
+            'Rent',
+            'Insurance',
+            'Groceries',
+            'Transportation',
+            'Entertainment',
+        ];
+
+        foreach ($categories as $category) {
+            bill_categories::create(['name' => $category]);
+        }
+
+        $this->command->info('Bill categories seeded successfully!');
     }
 }

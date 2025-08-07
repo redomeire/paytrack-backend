@@ -21,8 +21,6 @@ class notification extends Model
         'notification_type_id',
         'title',
         'message',
-        'is_read',
-        'read_at',
     ];
 
     public static function boot()
