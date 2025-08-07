@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\bills;
+use App\Models\notification;
 use App\Models\notification_read;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -77,5 +78,10 @@ class User extends Authenticatable
     public function bills()
     {
         return $this->hasMany(bills::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(notification::class);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\bills;
 use App\Models\notification;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -19,6 +20,7 @@ class notification extends Model
     protected $fillable = [
         'bill_id',
         'notification_type_id',
+        'user_id',
         'title',
         'message',
     ];
@@ -45,5 +47,10 @@ class notification extends Model
     public function notificationReads()
     {
         return $this->hasMany(notification_read::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

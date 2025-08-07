@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->nullable();
             $table->foreignUuid('bill_id')
                 ->constrained('bills')
                 ->onDelete('cascade');
