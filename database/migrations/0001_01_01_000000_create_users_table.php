@@ -19,9 +19,7 @@ return new class extends Migration
             $table->string('phone', 20);
             $table->string('avatar_url')->nullable();
             $table->string('timezone', 50)->default('Asia/Jakarta');
-            $table->enum('language', ['en', 'id'])->default('id');
             $table->enum('currency', ['USD', 'IDR'])->default('IDR');
-            $table->boolean('is_active')->default(false);
             $table->boolean('is_verified')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

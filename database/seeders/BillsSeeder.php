@@ -51,10 +51,7 @@ class BillsSeeder extends Seeder
                     'billing_type' => 'fixed',
                     'frequency' => 'monthly',
                     'custom_frequency_days' => 1,
-                    'first_due_date' => now()->addDays(rand(1, 30)),
-                    'next_due_date' => now()->addDays(rand(31, 60)),
-                    'last_paid_date' => now()->subDays(rand(1, 30)),
-                    'auto_advance' => true,
+                    'due_date' => now()->addDays(rand(1, 30)),
                     'notes' => 'This is a sample bill for user ID: ' . $userId,
                     'attachment_url' => null,
                 ]);

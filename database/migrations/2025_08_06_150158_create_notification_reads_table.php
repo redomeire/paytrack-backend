@@ -13,13 +13,14 @@ return new class extends Migration
     {
         Schema::create('notification_reads', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->boolean('is_read')->default(false);
             $table->foreignUuid('notification_id')
                 ->constrained('notifications')
                 ->onDelete('cascade');
             $table->foreignUuid('user_id')
                 ->constrained('users')
                 ->onDelete('cascade');
+            $table->boolean('is_read')->default(false);
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }

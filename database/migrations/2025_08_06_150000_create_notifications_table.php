@@ -21,8 +21,6 @@ return new class extends Migration
                 ->onDelete('cascade');
             $table->string('title', 200);
             $table->text('message');
-            $table->boolean('is_read')->nullable()->default(false);
-            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }

@@ -27,10 +27,7 @@ class bills extends Model
         'billing_type',
         'frequency',
         'custom_frequency_days',
-        'first_due_date',
-        'next_due_date',
-        'last_paid_date',
-        'auto_advance',
+        'due_date',
         'notes',
         'attachment_url',
     ];
