@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends BaseController
@@ -57,9 +58,10 @@ class AuthController extends BaseController
     public function logout(Request $request)
     {
         $user = $request->user();
+        Log::info("user token: " . $user->token()->id);
         try {
             if ($user) {
-                $user->tokens()->revoke();
+                $user->token()->revoke();
                 return $this->sendResponse(null, 'User logged out successfully.');
             }
         } catch (\Throwable $th) {
