@@ -2,34 +2,28 @@
 
 namespace App\Models;
 
-use App\Models\bill_categories;
-use App\Models\payments;
+use App\Models\notification;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class bills extends Model
+class notification_read extends Model
 {
-    /** @use HasFactory<\Database\Factories\BillsFactory> */
+    /** @use HasFactory<\Database\Factories\NotificationReadFactory> */
     use HasFactory;
 
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
+        'notification_id',
         'user_id',
-        'bill_category_id',
-        'name',
-        'description',
-        'amount',
-        'currency',
-        'billing_type',
-        'frequency',
-        'custom_frequency_days',
-        'due_date',
-        'notes',
-        'attachment_url',
+        'is_read',
+    ];
+
+    protected $casts = [
+        'is_read' => 'boolean',
     ];
 
     public static function boot()
@@ -46,13 +40,8 @@ class bills extends Model
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function billCategory()
+    public function notification()
     {
-        return $this->belongsTo(bill_categories::class, 'bill_category_id', 'id');
-    }
-
-    public function payments()
-    {
-        return $this->hasMany(payments::class);
+        return $this->belongsTo(notification::class, 'notification_id', 'id');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\bills;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -32,5 +33,10 @@ class payments extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = (string) Str::uuid();
         });
+    }
+
+    public function bill()
+    {
+        return $this->belongsTo(bills::class, 'bill_id', 'id');
     }
 }
