@@ -9,9 +9,11 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends BaseController
@@ -28,7 +30,8 @@ class AuthController extends BaseController
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'phone' => 'required|string|max:20',
-            'password' => 'required|string|min:6',
+            'password' => Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
+            'password_confirmation' => 'required|same:password',
             'language' => 'in:en,id',
             'currency' => 'in:USD,IDR',
         ]);
@@ -50,6 +53,10 @@ class AuthController extends BaseController
         if ($user) {
             return $this->sendError('User already logged in.', _, 401);
         }
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|string',
+        ]);
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
             $success['token'] = $user->createToken('User Token', ['user:bill:crud', 'user:payment:crud', 'user:notification:r'])->accessToken;
@@ -182,7 +189,8 @@ class AuthController extends BaseController
             $validator = Validator::make($request->all(), [
                 'token' => 'required',
                 'email' => 'required|email',
-                'password' => 'required|min:8|confirmed',
+                'password' => Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
+                'password_confirmation' => 'required|same:password',
             ]);
 
             if ($validator->fails()) {
