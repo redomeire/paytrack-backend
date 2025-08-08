@@ -14,7 +14,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
         Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')
             ->name('verification.verify');
-        Route::get('/auth/resend-verification-email', [AuthController::class, 'resendVerificationEmail']);
+        Route::get('/resend-verification-email', [AuthController::class, 'resendVerificationEmail']);
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('guest')->name('password.email');
+        Route::get('/reset-password/{token}', [AuthController::class, 'resetPassword'])->middleware('guest')->name('password.reset');
         // for social auth
         Route::group(['middleware' => ['web']], function () {
             Route::get('{provider}/redirect', [AuthController::class, 'handleSocialRedirect']);

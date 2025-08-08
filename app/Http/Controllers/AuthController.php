@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\BaseController;
 use App\Models\User;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -154,6 +156,57 @@ class AuthController extends BaseController
             return $this->sendResponse($success, 'User logged in successfully via ' . $provider);
         } catch (\Throwable $th) {
             Log::error("Socialite callback error: " . $th->getMessage());
+            return $this->sendError($th->getMessage(), null, 500);
+        }
+    }
+    public function forgotPassword(Request $request)
+    {
+        try {
+            $request->validate(['email' => 'required|email']);
+
+            $status = Password::sendResetLink(
+                $request->only('email')
+            );
+
+            if ($status === Password::ResetLinkSent) {
+                return $this->sendResponse(null, 'Password reset link sent successfully.');
+            }
+            throw new \Exception('Failed to send password reset link.');
+        } catch (\Throwable $th) {
+            return $this->sendError($th->getMessage(), null, 500);
+        }
+    }
+    public function resetPassword(Request $request, string $token)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'token' => 'required',
+                'email' => 'required|email',
+                'password' => 'required|min:8|confirmed',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError($validator->errors(), null, 422);
+            }
+
+            $status = Password::reset(
+                $request->all(),
+                function (User $user, string $password) {
+                    $user->forceFill([
+                        'password' => Hash::make($password),
+                    ])->setRememberToken(Str::random(60));
+
+                    $user->save();
+
+                    event(new PasswordReset($user));
+                }
+            );
+
+            if ($status === Password::PasswordReset) {
+                return $this->sendResponse(null, 'Password reset successfully.');
+            }
+            return $this->sendError('Password reset failed.', null, 400);
+        } catch (\Throwable $th) {
             return $this->sendError($th->getMessage(), null, 500);
         }
     }
