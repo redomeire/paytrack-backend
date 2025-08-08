@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\bills;
+use App\Models\bill_categories;
 use App\Models\notification;
 use App\Models\notification_read;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -84,5 +85,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function notifications()
     {
         return $this->hasMany(notification::class);
+    }
+
+    public function billCategories()
+    {
+        return $this->hasMany(bill_categories::class);
     }
 }

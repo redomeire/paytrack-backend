@@ -27,11 +27,6 @@ Route::prefix('v1')->group(function () {
         });
         Route::middleware([CheckToken::using('user:bill:crud', 'user:payment:crud', 'user:notification:r'), 'verified'])->group(function () {
             Route::prefix('bills')->group(function () {
-                Route::get('/', [BillsController::class, 'index']);
-                Route::post('/', [BillsController::class, 'store']);
-                Route::get('/{id}', [BillsController::class, 'detail']);
-                Route::put('/{id}', [BillsController::class, 'update']);
-                Route::delete('/{id}', [BillsController::class, 'delete']);
                 Route::prefix('categories')->group(function () {
                     Route::get('/', [BillCategoriesController::class, 'getBillCategories']);
                     Route::post('/', [BillCategoriesController::class, 'create']);
@@ -39,6 +34,11 @@ Route::prefix('v1')->group(function () {
                     Route::put('/{id}', [BillCategoriesController::class, 'update']);
                     Route::delete('/{id}', [BillCategoriesController::class, 'delete']);
                 });
+                Route::get('/', [BillsController::class, 'index']);
+                Route::post('/', [BillsController::class, 'store']);
+                Route::get('/{id}', [BillsController::class, 'detail']);
+                Route::put('/{id}', [BillsController::class, 'update']);
+                Route::delete('/{id}', [BillsController::class, 'delete']);
             });
             Route::prefix('payments')->group(function () {
                 Route::get('/', [PaymentsController::class, 'index']);

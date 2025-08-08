@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('bill_categories', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->string('name', 100);
             $table->text('description')->nullable();
             $table->string('color', 7)->nullable()->default('#ffffff');

@@ -26,7 +26,7 @@ class NotificationTypeController extends BaseController
                 'description' => 'nullable|string|max:500',
             ]);
             if ($validator->fails()) {
-                return $this->sendError('Validation Error', $validator->errors(), 422);
+                return $this->sendError($validator->errors(), 422);
             }
             $notification_type = notification_type::create($request->all());
             return $this->sendResponse($notification_type, 'Notification Type created successfully.', 201);

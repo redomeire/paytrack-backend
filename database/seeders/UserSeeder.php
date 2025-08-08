@@ -5,17 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-// protected $fillable = [
-//         'first_name',
-//         'last_name',
-//         'phone',
-//         'timezone',
-//         'language',
-//         'currency',
-//         'email',
-//         'password',
-//     ];
-
 class UserSeeder extends Seeder
 {
     /**
@@ -24,15 +13,6 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $users = [
-            [
-                'first_name' => 'John',
-                'last_name' => 'Doe',
-                'phone' => '1234567890',
-                'timezone' => 'UTC',
-                'currency' => 'USD',
-                'email' => 'john@gmail.com',
-                'password' => bcrypt('password123'),
-            ],
             [
                 'first_name' => 'Redo',
                 'last_name' => 'Meire',

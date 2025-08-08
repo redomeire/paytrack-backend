@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\bills;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -21,11 +22,11 @@ class bill_categories extends Model
         'color',
         'icon',
         'is_default',
+        'user_id',
     ];
 
     protected $hidden = [
-        'created_at',
-        'updated_at',
+        'user_id',
     ];
 
     public static function boot()
@@ -40,5 +41,10 @@ class bill_categories extends Model
     public function bills()
     {
         return $this->hasMany(bills::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }
