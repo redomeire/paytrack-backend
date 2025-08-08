@@ -9,50 +9,66 @@ use Illuminate\Support\Facades\Validator;
 
 class PaymentsController extends BaseController
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $payments = payments::all();
+            $userId = $request->user()->id;
+            $payments = payments::with('bill')
+                ->whereHas('bill', function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
+                ->orderBy('paid_date', 'desc')
+                ->paginate(10);
             return $this->sendResponse($payments, 'Payments retrieved successfully.');
         } catch (\Throwable $th) {
-            return $this->sendError($th->getMessage());
+            return $this->sendError($th->getMessage(), null, 500);
         }
     }
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'bill_id' => 'required|uuid|exists:bills,id',
-            'amount' => 'required|numeric',
-            'currency' => 'required|string|in:IDR,USD',
-            'paid_date' => 'required|date',
-            'due_date' => 'required|date|after_or_equal:paid_date',
-            'payment_method' => 'required|string|max:50',
-            'payment_reference' => 'required|string|max:100',
-            'notes' => 'nullable|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->sendError('Validation Error', $validator->errors());
-        }
-
         try {
-            $payment = payments::create($request->all());
-            return $this->sendResponse($payment, 'Payment created successfully.', 201);
+            $validator = Validator::make($request->all(), [
+                'bill_id' => 'required|uuid|exists:bills,id',
+                'amount' => 'required|numeric',
+                'currency' => 'required|string|in:IDR,USD',
+                'paid_date' => 'required|date',
+                'due_date' => 'required|date|after_or_equal:paid_date',
+                'payment_method' => 'required|string|max:50',
+                'payment_reference' => 'required|string|max:100',
+                'notes' => 'nullable|string|max:255',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error', $validator->errors());
+            }
+
+            try {
+                $payment = payments::create($request->all());
+                return $this->sendResponse($payment, 'Payment created successfully.', 201);
+            } catch (\Throwable $th) {
+                return $this->sendError($th->getMessage());
+            }
         } catch (\Throwable $th) {
-            return $this->sendError($th->getMessage());
+            return $this->sendError($th->getMessage(), null, 500);
         }
     }
     public function detail($id)
     {
-        $payment = payments::find($id);
-        if (!$payment) {
-            return $this->sendError('Payment not found', null, 404);
+        try {
+            $userId = $request->user()->id;
+            $payment = payments::find($id);
+            if (!$payment) {
+                return $this->sendError('Payment not found', null, 404);
+            }
+            return $this->sendResponse($payment, 'Payment retrieved successfully.');
+        } catch (\Throwable $th) {
+            return $this->sendError($th->getMessage(), null, 500);
         }
-        return $this->sendResponse($payment, 'Payment retrieved successfully.');
     }
     public function update(Request $request, $id)
     {
         try {
+            $userId = $request->user()->id;
             $validator = Validator::make($request->all(), [
                 'bill_id' => 'sometimes|uuid|exists:bills,id',
                 'amount' => 'sometimes|numeric',
@@ -68,7 +84,11 @@ class PaymentsController extends BaseController
                 return $this->sendError('Validation Error', $validator->errors());
             }
 
-            $payment = payments::find($id);
+            $payment = payments::where('id', $id)
+                ->whereHas('bill', function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
+                ->first();
             if (!$payment) {
                 return $this->sendError('Payment not found', null, 404);
             }
@@ -81,14 +101,18 @@ class PaymentsController extends BaseController
     public function delete($id)
     {
         try {
-            $payment = payments::findOrFail($id);
+            $payment = payments::where('id', $id)
+                ->whereHas('bill', function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
+                ->first();
             if (!$payment) {
                 return $this->sendError('Payment not found', null, 404);
             }
             $payment->delete();
             return $this->sendResponse(null, 'Payment deleted successfully.');
         } catch (\Throwable $th) {
-            return $this->sendError($th->getMessage());
+            return $this->sendError($th->getMessage(), null, 500);
         }
     }
 }

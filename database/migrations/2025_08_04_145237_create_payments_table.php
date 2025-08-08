@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('payment_method', 50)->default('cash');
             $table->string('payment_reference', 100);
             $table->text('notes')->nullable();
-            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
             $table->timestamps();
         });
     }

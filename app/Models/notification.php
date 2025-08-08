@@ -3,30 +3,26 @@
 namespace App\Models;
 
 use App\Models\bills;
+use App\Models\notification;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class bill_categories extends Model
+class notification extends Model
 {
-    /** @use HasFactory<\Database\Factories\BillCategoriesFactory> */
+    /** @use HasFactory<\Database\Factories\NotificationFactory> */
     use HasFactory;
 
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
-        'name',
-        'description',
-        'color',
-        'icon',
-        'is_default',
+        'bill_id',
+        'notification_type_id',
         'user_id',
-    ];
-
-    protected $hidden = [
-        'user_id',
+        'title',
+        'message',
     ];
 
     public static function boot()
@@ -38,9 +34,19 @@ class bill_categories extends Model
         });
     }
 
-    public function bills()
+    public function bill()
     {
-        return $this->hasMany(bills::class);
+        return $this->belongsTo(bills::class, 'bill_id', 'id');
+    }
+
+    public function notificationType()
+    {
+        return $this->belongsTo(notification_type::class, 'notification_type_id', 'id');
+    }
+
+    public function notificationReads()
+    {
+        return $this->hasMany(notification_read::class);
     }
 
     public function user()

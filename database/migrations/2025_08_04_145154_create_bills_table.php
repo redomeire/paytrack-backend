@@ -22,10 +22,7 @@ return new class extends Migration
             $table->enum('billing_type', ['fixed', 'recurring'])->default('fixed');
             $table->enum('frequency', ['monthly', 'annual', 'custom'])->default('monthly');
             $table->integer('custom_frequency_days')->default(1);
-            $table->date('first_due_date');
-            $table->date('next_due_date');
-            $table->date('last_paid_date')->nullable();
-            $table->boolean('auto_advance')->default(false);
+            $table->date('due_date');
             $table->text('notes')->nullable();
             $table->text('attachment_url')->nullable();
             $table->timestamps();
