@@ -12,12 +12,20 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
         Route::post('/register', [AuthController::class, 'register']);
+        Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')
+            ->name('verification.verify');
+        Route::get('/auth/resend-verification-email', [AuthController::class, 'resendVerificationEmail']);
+        // for social auth
+        Route::group(['middleware' => ['web']], function () {
+            Route::get('{provider}/redirect', [AuthController::class, 'handleSocialRedirect']);
+            Route::get('{provider}/authorize', [AuthController::class, 'handleSocialAuthorize']);
+        });
     });
     Route::middleware('auth:api')->group(function () {
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
         });
-        Route::middleware(['auth:api', CheckToken::using('user:bill:crud', 'user:payment:crud', 'user:notification:r')])->group(function () {
+        Route::middleware([CheckToken::using('user:bill:crud', 'user:payment:crud', 'user:notification:r'), 'verified'])->group(function () {
             Route::prefix('bills')->group(function () {
                 Route::get('/', [BillsController::class, 'index']);
                 Route::post('/', [BillsController::class, 'store']);
@@ -44,7 +52,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('/{readId}', [NotificationController::class, 'readNotification']);
             });
         });
-        Route::middleware(['auth:api', CheckToken::using('admin:notification:crud', 'admin:user:crud')])->group(function () {
+        Route::middleware([CheckToken::using('admin:notification:crud', 'admin:user:crud'), 'verified'])->group(function () {
             Route::prefix('notification')->group(function () {
                 Route::get('/admin', [NotificationController::class, 'getAllNotificationAdminPublic']);
                 Route::post('/admin', [NotificationController::class, 'store']);

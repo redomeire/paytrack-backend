@@ -22,9 +22,12 @@ return new class extends Migration
             $table->enum('currency', ['USD', 'IDR'])->default('IDR');
             $table->boolean('is_verified')->default(false);
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->enum('role', ['user', 'admin'])->default('user');
             $table->rememberToken();
+            $table->string('google_id')->nullable();
+            $table->string('google_token')->nullable();
+            $table->string('google_refresh_token')->nullable();
             $table->timestamps();
         });
 
