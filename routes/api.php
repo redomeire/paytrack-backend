@@ -14,13 +14,13 @@ Route::prefix('v1')->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
         Route::get('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')
             ->name('verification.verify');
-        Route::get('/resend-verification-email', [AuthController::class, 'resendVerificationEmail']);
+        Route::post('/send-verification-email', [AuthController::class, 'sendVerificationEmail']);
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('guest')->name('password.email');
         Route::post('/reset-password/{token}', [AuthController::class, 'resetPassword'])->middleware('guest')->name('password.reset');
         // for social auth
         Route::group(['middleware' => ['web']], function () {
-            Route::get('{provider}/redirect', [AuthController::class, 'handleSocialRedirect']);
-            Route::get('{provider}/authorize', [AuthController::class, 'handleSocialAuthorize']);
+            Route::get('google/redirect', [AuthController::class, 'handleSocialRedirect']);
+            Route::get('google/callback', [AuthController::class, 'handleSocialAuthorize']);
         });
     });
     Route::middleware('auth:api')->group(function () {

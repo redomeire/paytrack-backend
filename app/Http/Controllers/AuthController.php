@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\BaseController;
 use App\Models\User;
-use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Auth\Events\Registered;
+use App\Http\Controllers\BaseController;
+use Illuminate\Support\Facades\Password;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password as PasswordValidation;
 
 class AuthController extends BaseController
 {
@@ -53,18 +54,25 @@ class AuthController extends BaseController
         if ($user) {
             return $this->sendError('User already logged in.', _, 401);
         }
+        $foundUser = User::where('email', $request->email)->first();
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors(), null, 422);
+        }
+        if (!$foundUser) {
+            return $this->sendError('User not found.', null, 404);
+        }
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            $user = Auth::user();
-            $success['token'] = $user->createToken('User Token', ['user:bill:crud', 'user:payment:crud', 'user:notification:r'])->accessToken;
-            $success['name'] = $user->name;
+            $authUser = Auth::user();
+            $success['token'] = $authUser->createToken('User Token', ['user:bill:crud', 'user:payment:crud', 'user:notification:r'])->accessToken;
+            $success['user'] = $foundUser;
 
             return $this->sendResponse($success, 'User login successfully.');
         } else {
-            return $this->sendError('Unauthorised.', ['error' => 'Unauthorised']);
+            return $this->sendError('Wrong credentials.', null, 400);
         }
     }
     public function verifyEmail(Request $request, $id, $hash)
@@ -89,7 +97,7 @@ class AuthController extends BaseController
             return $this->sendError($th->getMessage(), null, 500);
         }
     }
-    public function resendVerificationEmail(Request $request)
+    public function sendVerificationEmail(Request $request)
     {
         try {
             $user = User::where('email', $request->email)->first();
@@ -119,48 +127,58 @@ class AuthController extends BaseController
             return $this->sendError($th->getMessage(), _, 500);
         }
     }
-    public function handleSocialRedirect($provider)
+    public function handleSocialRedirect()
     {
         try {
-            return Socialite::driver($provider)->redirect();
+            return Socialite::driver('google')->stateless()->redirect();
         } catch (\Throwable $th) {
             Log::error("Socialite redirect error: " . $th->getMessage());
             return $this->sendError($th->getMessage(), null, 500);
         }
     }
-    public function handleSocialAuthorize($provider)
+    public function handleSocialAuthorize(Request $request)
     {
         try {
-            $socialiteUser = Socialite::driver($provider)->user();
+            $code = $request->query('code');
+            if (!$code) {
+                return $this->sendError('Code is required', null, 422);
+            }
+            $socialiteUser = Socialite::driver(driver: 'google')->with(['code' => $code])->stateless()->user();
+            if (!$socialiteUser) {
+                return $this->sendError('Failed to retrieve user from Google.', null, 500);
+            }
             $user_from_email = User::where('email', $socialiteUser->email)->first();
-
             if ($user_from_email) {
-                $user_from_email[$provider . '_id'] = $socialiteUser->id;
-                $user_from_email[$provider . '_token'] = $socialiteUser->token;
+                $user_from_email['google_id'] = $socialiteUser->id;
+                $user_from_email['google_token'] = $socialiteUser->token;
                 $user_from_email['avatar_url'] = $socialiteUser->avatar_original;
                 $user_from_email['is_verified'] = true;
                 $user_from_email['email_verified_at'] = now();
                 if (isset($socialiteUser->refreshToken)) {
-                    $user_from_email[$provider . '_refresh_token'] = $socialiteUser->refreshToken;
+                    $user_from_email['google_refresh_token'] = $socialiteUser->refreshToken;
                 }
                 $user_from_email->save();
             } else {
                 $newUser = User::create([
-                    $provider . '_id' => $socialiteUser->id,
+                    'google_id' => $socialiteUser->id,
                     'name' => $socialiteUser->name,
                     'email' => $socialiteUser->email,
-                    $provider . '_token' => $socialiteUser->token,
-                    $provider . '_refresh_token' => $socialiteUser->refreshToken ?? null,
+                    'google_token' => $socialiteUser->token,
+                    'google_refresh_token' => $socialiteUser->refreshToken ?? null,
                     'avatar_url' => $socialiteUser->avatar_original,
                     'is_verified' => true,
                     'email_verified_at' => now(),
                 ]);
+                $newUser->save();
+                $user_from_email = $newUser;
             }
-
+            
+            Auth::login($user_from_email);
             $authUser = Auth::user();
             $success['token'] = $authUser->createToken('User Token', ['user:bill:crud', 'user:payment:crud', 'user:notification:r'])->accessToken;
+            $success['user'] = $user_from_email;
 
-            return $this->sendResponse($success, 'User logged in successfully via ' . $provider);
+            return $this->sendResponse($success, 'User logged in successfully via google.');
         } catch (\Throwable $th) {
             Log::error("Socialite callback error: " . $th->getMessage());
             return $this->sendError($th->getMessage(), null, 500);
@@ -169,7 +187,13 @@ class AuthController extends BaseController
     public function forgotPassword(Request $request)
     {
         try {
-            $request->validate(['email' => 'required|email']);
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email|exists:users,email',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError($validator->errors(), null, 422);
+            }
 
             $status = Password::sendResetLink(
                 $request->only('email')
@@ -189,7 +213,7 @@ class AuthController extends BaseController
             $validator = Validator::make($request->all(), [
                 'token' => 'required',
                 'email' => 'required|email',
-                'password' => Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
+                'password' => PasswordValidation::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
                 'password_confirmation' => 'required|same:password',
             ]);
 
@@ -213,7 +237,7 @@ class AuthController extends BaseController
             if ($status === Password::PasswordReset) {
                 return $this->sendResponse(null, 'Password reset successfully.');
             }
-            return $this->sendError('Password reset failed.', null, 400);
+            return $this->sendError('Token has expired', null, 400);
         } catch (\Throwable $th) {
             return $this->sendError($th->getMessage(), null, 500);
         }
