@@ -29,9 +29,8 @@ class AuthController extends BaseController
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|unique:users,email',
             'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
             'phone' => 'required|string|max:20',
-            'password' => Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
+            'password' => PasswordValidation::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
             'password_confirmation' => 'required|same:password',
             'language' => 'in:en,id',
             'currency' => 'in:USD,IDR',
@@ -64,6 +63,10 @@ class AuthController extends BaseController
         }
         if (!$foundUser) {
             return $this->sendError('User not found.', null, 404);
+        }
+        // check if password is null
+        if (is_null($foundUser->password)) {
+            return $this->sendError('User password is not set. Please login using google or github instead', null, 400);
         }
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $authUser = Auth::user();
@@ -161,14 +164,23 @@ class AuthController extends BaseController
             } else {
                 $newUser = User::create([
                     'google_id' => $socialiteUser->id,
-                    'name' => $socialiteUser->name,
+                    'first_name' => $socialiteUser->user['given_name'] ?? null,
+                    'last_name' => $socialiteUser->user['family_name'] ?? null,
                     'email' => $socialiteUser->email,
                     'google_token' => $socialiteUser->token,
                     'google_refresh_token' => $socialiteUser->refreshToken ?? null,
-                    'avatar_url' => $socialiteUser->avatar_original,
+                    'avatar_url' => $socialiteUser->avatar_original ?? $socialiteUser->avatar,
                     'is_verified' => true,
                     'email_verified_at' => now(),
                 ]);
+                $newUser->google_id = $socialiteUser->id;
+                $newUser->google_token = $socialiteUser->token;
+                $newUser->avatar_url = $socialiteUser->avatar_original ?? $socialiteUser->avatar;
+                if (isset($socialiteUser->refreshToken)) {
+                    $newUser->google_refresh_token = $socialiteUser->refreshToken;
+                }
+                $newUser->is_verified = true;
+                $newUser->email_verified_at = now();
                 $newUser->save();
                 $user_from_email = $newUser;
             }

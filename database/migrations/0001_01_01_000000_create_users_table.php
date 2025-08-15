@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('email')->unique();
             $table->string('first_name', 100);
-            $table->string('last_name', 100);
-            $table->string('phone', 20);
+            $table->string('last_name', 100)->nullable();
+            $table->string('phone', 20)->nullable();
             $table->string('avatar_url')->nullable();
             $table->string('timezone', 50)->default('Asia/Jakarta');
             $table->enum('currency', ['USD', 'IDR'])->default('IDR');

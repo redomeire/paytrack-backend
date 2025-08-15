@@ -32,6 +32,10 @@ class bills extends Model
         'attachment_url',
     ];
 
+    protected $casts = [
+        'due_date' => 'date',
+    ];
+
     public static function boot()
     {
         parent::boot();

@@ -19,8 +19,8 @@ class UserSeeder extends Seeder
                 'phone' => '1234567890',
                 'timezone' => 'UTC',
                 'currency' => 'IDR',
-                'email' => 'redomeire2@gmail.com',
-                'password' => bcrypt('Redomeire2105!'),
+                'email' => 'test@gmail.com',
+                'password' => bcrypt('test123'),
             ],
         ];
 

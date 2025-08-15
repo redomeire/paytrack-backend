@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('bills', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained();
+            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
             $table->foreignUuid('bill_category_id')->constrained();
             $table->string('name', 100);
             $table->text('description')->nullable();
             $table->double('amount', 15, 2);
             $table->string('currency', 3)->default('IDR');
             $table->enum('billing_type', ['fixed', 'recurring'])->default('fixed');
-            $table->enum('frequency', ['monthly', 'annual', 'custom'])->default('monthly');
-            $table->integer('custom_frequency_days')->default(1);
+            $table->enum('frequency', ['monthly', 'annual', 'custom'])->default('monthly')->nullable();
+            $table->integer('custom_frequency_days')->default(1)->nullable();
             $table->date('due_date');
             $table->text('notes')->nullable();
             $table->text('attachment_url')->nullable();

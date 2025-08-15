@@ -6,17 +6,28 @@ use App\Http\Controllers\BaseController;
 use App\Models\bills;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\bill_categories;
 
 class BillsController extends BaseController
 {
     public function index(Request $request)
     {
         try {
+            $search = $request->query('search', '');
+            $categoryId = $request->query('bill_category_id');
+
             $userId = $request->user()->id;
             $bills = bills::where('user_id', $userId)
+                ->when($categoryId, function ($query) use ($categoryId) {
+                    $categoryExists = bill_categories::where('id', $categoryId)->exists();
+                    if ($categoryExists) {
+                        return $query->where('bill_category_id', $categoryId);
+                    }
+                })
+                ->where('name', 'like', '%' . $search . '%')
                 ->with('billCategory')
                 ->orderBy('updated_at', 'asc')
-                ->get();
+                ->paginate(10);
             return $this->sendResponse(
                 $bills,
                 'Bills retrieved successfully.'
@@ -42,11 +53,11 @@ class BillsController extends BaseController
                     'amount' => 'required|numeric|min:0',
                     'currency' => 'required|string|size:3',
                     'billing_type' => 'required|in:fixed,recurring',
-                    'frequency' => 'required|in:monthly,annual,custom',
+                    'frequency' => 'nullable|in:monthly,annual,custom',
                     'custom_frequency_days' => 'required_if:frequency,custom|integer|min:1',
                     'notes' => 'nullable|string|max:500',
                     'attachment_url' => 'nullable|url|max:255',
-                    'due_date' => 'required|date',
+                    'due_date' => 'required|string',
                 ]
             );
 
@@ -128,10 +139,6 @@ class BillsController extends BaseController
                     'billing_type' => 'sometimes|required|in:fixed,recurring',
                     'frequency' => 'sometimes|required|in:monthly,annual,custom',
                     'custom_frequency_days' => 'required_if:frequency,custom|integer|min:1',
-                    'first_due_date' => 'sometimes|required|date',
-                    'next_due_date' => 'sometimes|required|date|after_or_equal:first_due_date',
-                    'last_paid_date' => 'nullable|date|after_or_equal:first_due_date',
-                    'auto_advance' => 'boolean',
                     'notes' => 'nullable|string|max:500',
                     'attachment_url' => 'nullable|url|max:255',
                 ]
