@@ -254,4 +254,25 @@ class AuthController extends BaseController
             return $this->sendError($th->getMessage(), null, 500);
         }
     }
+    public function changePassword(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $validator = Validator::make($request->all(), [
+                'password' => PasswordValidation::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised(),
+                'password_confirmation' => 'required|same:password',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError($validator->errors(), null, 422);
+            }
+
+            $user->password = Hash::make($request->password);
+            $user->save();
+
+            return $this->sendResponse(null, 'Password changed successfully.');
+        } catch (\Throwable $th) {
+            return $this->sendError($th->getMessage(), null, 500);
+        }
+    }
 }

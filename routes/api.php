@@ -28,6 +28,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
         });
         Route::middleware([CheckToken::using('user:bill:crud', 'user:payment:crud', 'user:notification:r'), 'verified'])->group(function () {
+            Route::prefix('auth')->group(function () {
+                Route::post('/change-password', [AuthController::class, 'changePassword']);
+            });
             Route::prefix('bills')->group(function () {
                 Route::prefix('categories')->group(function () {
                     Route::get('/', [BillCategoriesController::class, 'getBillCategories']);
