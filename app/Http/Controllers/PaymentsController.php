@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\BaseController;
 use App\Models\payments;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\BaseController;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentsController extends BaseController
@@ -13,11 +14,24 @@ class PaymentsController extends BaseController
     {
         try {
             $userId = $request->user()->id;
-            $payments = payments::with('bill')
-                ->whereHas('bill', function ($query) use ($userId) {
-                    $query->where('user_id', $userId);
+            $payments = DB::table('payments')
+                ->join('bills', 'payments.bill_id', '=', 'bills.id')
+                ->join('users', 'bills.user_id', '=', 'users.id')
+                ->where('users.id', $userId)
+                ->when($request->has('start_date') && $request->has('end_date'), function ($query) use ($request) {
+                    $query->whereBetween('payments.due_date', [
+                        $request->query('start_date'),
+                        $request->query('end_date')
+                    ]);
                 })
                 ->orderBy('paid_date', 'desc')
+                ->select(
+                    'payments.id',
+                    'payments.payment_method',
+                    'payments.amount',
+                    'payments.due_date',
+                    'payments.paid_date',
+                )
                 ->paginate(10);
             return $this->sendResponse($payments, 'Payments retrieved successfully.');
         } catch (\Throwable $th) {
@@ -31,10 +45,10 @@ class PaymentsController extends BaseController
                 'bill_id' => 'required|uuid|exists:bills,id',
                 'amount' => 'required|numeric',
                 'currency' => 'required|string|in:IDR,USD',
-                'paid_date' => 'required|date',
+                'paid_date' => 'nullable|date',
                 'due_date' => 'required|date|after_or_equal:paid_date',
-                'payment_method' => 'required|string|max:50',
-                'payment_reference' => 'required|string|max:100',
+                'payment_method' => 'nullable|string|max:50',
+                'payment_reference' => 'nullable|string|max:100',
                 'notes' => 'nullable|string|max:255',
             ]);
 
@@ -52,7 +66,7 @@ class PaymentsController extends BaseController
             return $this->sendError($th->getMessage(), null, 500);
         }
     }
-    public function detail($id)
+    public function detail(Request $request, $id)
     {
         try {
             $userId = $request->user()->id;
@@ -98,9 +112,10 @@ class PaymentsController extends BaseController
             return $this->sendError($th->getMessage());
         }
     }
-    public function delete($id)
+    public function delete(Request $request, $id)
     {
         try {
+            $userId = $request->user()->id;
             $payment = payments::where('id', $id)
                 ->whereHas('bill', function ($query) use ($userId) {
                     $query->where('user_id', $userId);

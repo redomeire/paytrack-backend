@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('bill_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 15, 2);
+            $table->double('amount', 15, 2);
             $table->enum('currency', ['IDR', 'USD'])->default('IDR');
-            $table->date('paid_date');
+            $table->date('paid_date')->nullable();
             $table->date('due_date');
-            $table->string('payment_method', 50)->default('cash');
-            $table->string('payment_reference', 100);
+            $table->string('payment_method', 50)->nullable();
+            $table->string('payment_reference', 100)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });
