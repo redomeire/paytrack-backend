@@ -2,8 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Models\User;
 use App\Models\bills;
 use App\Models\payments;
+use App\Mail\PaymentFailed;
+use App\Mail\PaymentSuccess;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Queue\Queueable;
@@ -12,62 +15,80 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class XenditCheckoutWebhook implements ShouldQueue
 {
     use Queueable;
+
     protected array $payload;
-    /**
-     * Create a new job instance.
-     */
+
     public function __construct(array $payload)
     {
         $this->payload = $payload;
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(): void
     {
-        Log::info('Webhook Xendit diterima. Payload:', $this->payload);
+        try {
+            Log::info('Webhook Xendit diterima. Payload:', $this->payload);
 
-        // Ambil status transaksi dari payload
-        $status = $this->payload['status'] ?? null;
-        $invoiceId = $this->payload['external_id'] ?? null;
+            $status = $this->payload['status'] ?? null;
+            $invoiceId = $this->payload['external_id'] ?? null;
 
-        if (!$status || !$invoiceId) {
-            Log::error('Payload webhook tidak valid.', $this->payload);
-            return;
-        }
-
-        // Cari bill berdasarkan invoice_id
-        $bill = bills::where('id', $invoiceId)->first();
-
-        if ($bill) {
-            // Perbarui status pesanan berdasarkan status dari webhook
-            // membuat payment
-            $payment = payments::create([
-                'bill_id' => $bill->id,
-                'amount' => $this->payload['amount'] ?? 0,
-                'currency' => $this->payload['currency'] ?? 'IDR',
-                'paid_date' => $status === 'PAID' ? now() : null,
-                'due_date' => $bill->due_date,
-                'payment_method' => $this->payload['payment_method'] ?? 'Xendit',
-                'payment_reference' => $this->payload['id'] ?? null,
-                'notes' => 'Payment via Xendit Webhook',
-            ]);
-            if ($status === 'PAID') {
-                $bill->update(['status' => 'paid']);
-                Log::info("Pesanan #{$bill->id} berhasil diperbarui menjadi 'paid'.");
-
-                Mail::to($order->user->email)->send(new \App\Mail\PaymentSuccess($bill));
-            } elseif ($status === 'FAILED') {
-                Mail::to($order->user->email)->send(new \App\Mail\PaymentFailed($bill));
-                $bill->update(['status' => 'failed']);
-                Log::warning("Pesanan #{$bill->id} gagal");
-            } elseif ($status === 'EXPIRED') {
-                $bill->update(['status' => 'overdue']);
-                Log::warning("Pesanan #{$bill->id} kedaluwarsa.");
+            if (!$status || !$invoiceId) {
+                Log::error('Payload webhook tidak valid atau tidak memiliki status/invoice ID.', $this->payload);
+                return;
             }
-        } else {
-            Log::warning("Pesanan dengan invoice ID '{$invoiceId}' tidak ditemukan.");
+
+            $bill = bills::where('id', $invoiceId)->first();
+
+            if ($bill) {
+                if ($bill->status === 'paid') {
+                    Log::warning("Tagihan #{$bill->id} sudah berstatus 'paid', mengabaikan webhook.");
+                    return;
+                }
+
+                if ($status === 'PAID') {
+                    payments::create([
+                        'bill_id' => $bill->id,
+                        'amount' => $this->payload['paid_amount'] ?? 0,
+                        'currency' => $this->payload['currency'] ?? 'IDR',
+                        'paid_date' => $this->payload['paid_at'] ? \Carbon\Carbon::parse($this->payload['paid_at']) : now(),
+                        'due_date' => $bill->due_date ?? now(),
+                        'payment_method' => $this->payload['payment_method'] ?? 'Xendit',
+                        'payment_reference' => $this->payload['id'] ?? null,
+                        'notes' => 'Payment via Xendit Webhook',
+                    ]);
+
+                    Log::info("Pembayaran untuk tagihan #{$bill->id} telah dibuat.", $bill->toArray());
+
+                    $bill->status = 'paid';
+                    $bill->save();
+                    Log::info("Tagihan #{$bill->id} berhasil diperbarui menjadi 'paid'.");
+
+                    if ($bill->user_id) {
+                        $user = User::find($bill->user_id);
+                        Mail::to($user->email)->send(new PaymentSuccess($bill));
+                    }
+
+                } elseif ($status === 'EXPIRED') {
+                    $bill->status = 'overdue';
+                    $bill->save();
+                    Log::warning("Tagihan #{$bill->id} kedaluwarsa.");
+
+                } elseif ($status === 'FAILED') {
+                    $bill->status = 'failed';
+                    $bill->save();
+
+                    Log::warning("Tagihan #{$bill->id} gagal.");
+
+                    if ($bill->user_id) {
+                        $user = User::find($bill->user_id);
+                        Mail::to($user->email)->send(new PaymentFailed($bill));
+                    }
+                }
+            } else {
+                Log::warning("Tagihan dengan ID '{$invoiceId}' tidak ditemukan.");
+            }
+        } catch (\Throwable $th) {
+            Log::error('Error processing Xendit webhook: ' . $th->getMessage(), $this->payload);
+            throw $th;
         }
     }
 }

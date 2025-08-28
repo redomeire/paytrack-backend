@@ -160,7 +160,7 @@ class PaymentsController extends BaseController
                 return $this->sendError('Bill not found', null, 404);
             }
             $invoiceRequest = new CreateInvoiceRequest([
-                'external_id' => (string) $bill->id,
+                'external_id' => $bill->id,
                 'amount' => $bill->amount,
                 'description' => "Credit Order #" . $bill->billId,
                 'customer' => [
@@ -170,7 +170,7 @@ class PaymentsController extends BaseController
                 'currency' => 'IDR',
                 'invoice_duration' => 3600, // 1 hour
                 'success_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/success',
-                'failure_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/failure',
+                'failure_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/failure?billId=' . $bill->id,
             ]);
             
             $invoice = $this->xenditInvoiceApi->createInvoice($invoiceRequest);

@@ -2,12 +2,14 @@
 
 namespace App\Mail;
 
+use App\Models\User;
+use App\Models\bills;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 class PaymentFailed extends Mailable
 {
@@ -16,10 +18,9 @@ class PaymentFailed extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        protected bills $bill
+    ) {}
 
     /**
      * Get the message envelope.
@@ -36,8 +37,13 @@ class PaymentFailed extends Mailable
      */
     public function content(): Content
     {
+        $user = User::find($this->bill->user_id);
         return new Content(
             markdown: 'mail.payment-failed',
+            with: [
+                'bill' => $this->bill,
+                'user' => $user,
+            ],
         );
     }
 

@@ -1,7 +1,7 @@
-@component('mail::message')
+<x-mail::message>
 # Pembayaran Gagal 😥
 
-Halo **{{ $bill->user->name ?? 'Pelanggan' }}**,
+Halo **{{ $user->name ?? 'Pelanggan' }}**,
 
 Kami ingin menginformasikan bahwa pembayaran Anda untuk tagihan **#{{ $bill->invoice_number }}** tidak berhasil diproses. Ini bisa disebabkan oleh beberapa hal, seperti:
 * **Dana tidak mencukupi**
@@ -12,7 +12,7 @@ Kami ingin menginformasikan bahwa pembayaran Anda untuk tagihan **#{{ $bill->inv
 
 ### Detail Tagihan
 
-* **Nomor Tagihan:** {{ $bill->invoice_number }}
+* **Nomor Tagihan:** {{ $bill->id }}
 * **Tanggal Transaksi:** {{ $bill->created_at->format('d M Y, H:i') }} WIB
 * **Total Tagihan:** Rp{{ number_format($bill->amount, 0, ',', '.') }}
 
@@ -20,4 +20,4 @@ Jika Anda merasa ini adalah kesalahan atau memiliki pertanyaan, mohon hubungi ti
 
 Hormat kami,
 **{{ config('app.name') }}**
-@endcomponent
+</x-mail::message>

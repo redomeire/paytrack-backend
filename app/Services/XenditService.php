@@ -26,7 +26,7 @@ class XenditService
         return $xenditInvoiceApi->getInvoiceById($invoiceId);
     }
 
-    public static function updateExpiredInvoice($billId, $invoiceId)
+    public static function updateExpiredInvoice($billId)
     {
         $invoice = self::getInvoice($invoiceId);
         if ($invoice['status'] === 'EXPIRED') {
@@ -34,8 +34,7 @@ class XenditService
 
             DB::transaction(function () use ($bill, $invoice) {
                 $bill->update([
-                    'status' => 'overdue',
-                    'updated_at' => Carbon::parse($invoice['expiry_date']),
+                    'status' => 'overdue'
                 ]);
             });
         }
@@ -43,10 +42,10 @@ class XenditService
 
     public static function checkUnpaidBills()
     {
-        $unpaidOrders = bills::where('status', 'pending')->get();
+        $unpaidBills = bills::where('status', 'pending')->get();
 
-        foreach ($unpaidOrders as $order) {
-            self::updateExpiredInvoice($order->id, $order->transaction_id);
+        foreach ($unpaidBills as $unpaidBill) {
+            self::updateExpiredInvoice($unpaidBill->id);
         }
     }
 }

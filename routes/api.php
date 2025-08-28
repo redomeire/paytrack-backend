@@ -23,6 +23,7 @@ Route::prefix('v1')->group(function () {
             Route::get('google/callback', [AuthController::class, 'handleSocialAuthorize']);
         });
     });
+    Route::post('/payments/webhook/xendit/checkout', [PaymentsController::class, 'webhook']);
     Route::middleware('auth:api')->group(function () {
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
@@ -54,7 +55,6 @@ Route::prefix('v1')->group(function () {
             });
             Route::prefix('payments')->group(function () {
                 Route::post('/checkout', [PaymentsController::class, 'checkout']);
-                Route::post('/webhook/xendit/checkout', [PaymentsController::class, 'webhook']);
                 Route::get('/', [PaymentsController::class, 'index']);
                 Route::post('/', [PaymentsController::class, 'store']);
                 Route::get('/{id}', [PaymentsController::class, 'detail']);
