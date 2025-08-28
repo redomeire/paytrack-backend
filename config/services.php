@@ -40,4 +40,10 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8000/auth/google/callback'),
     ],
+
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_API_KEY'),
+        'public_key' => env('XENDIT_PUBLIC_KEY'),
+        'webhook_secret' => env('XENDIT_WEBHOOK_VERIFICATION_TOKEN'),
+    ]
 ];

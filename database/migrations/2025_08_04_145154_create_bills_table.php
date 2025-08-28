@@ -25,7 +25,7 @@ return new class extends Migration
             $table->date('due_date');
             $table->text('notes')->nullable();
             $table->text('attachment_url')->nullable();
-            $table->enum('status', ['pending', 'paid', 'overdue'])->default('pending');
+            $table->enum('status', ['pending', 'paid', 'failed', 'overdue'])->default('pending');
             $table->timestamps();
         });
     }

@@ -47,6 +47,11 @@ class bills extends Model
         });
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function billSeries()
     {
         return $this->belongsTo(bill_series::class, 'bill_series_id', 'id');

@@ -53,6 +53,8 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{id}', [BillsController::class, 'deleteBill']);
             });
             Route::prefix('payments')->group(function () {
+                Route::post('/checkout', [PaymentsController::class, 'checkout']);
+                Route::post('/webhook/xendit/checkout', [PaymentsController::class, 'webhook']);
                 Route::get('/', [PaymentsController::class, 'index']);
                 Route::post('/', [PaymentsController::class, 'store']);
                 Route::get('/{id}', [PaymentsController::class, 'detail']);

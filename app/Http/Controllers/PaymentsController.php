@@ -2,14 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\bills;
 use App\Models\payments;
+use Xendit\Configuration;
 use Illuminate\Http\Request;
+use Xendit\Invoice\InvoiceApi;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\XenditCheckoutWebhook;
 use App\Http\Controllers\BaseController;
+use Xendit\Invoice\CreateInvoiceRequest;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentsController extends BaseController
 {
+    private $xenditInvoiceApi;
+    public function __construct()
+    {
+        Configuration::setXenditKey(config('services.xendit.secret_key'));
+        $this->xenditInvoiceApi = new InvoiceApi();
+    }
     public function index(Request $request)
     {
         try {
@@ -21,7 +32,7 @@ class PaymentsController extends BaseController
                 ->when($request->has('start_date') && $request->has('end_date'), function ($query) use ($request) {
                     $query->whereBetween('payments.due_date', [
                         $request->query('start_date'),
-                        $request->query('end_date')
+                        $request->query('end_date'),
                     ]);
                 })
                 ->orderBy('paid_date', 'desc')
@@ -126,6 +137,54 @@ class PaymentsController extends BaseController
             }
             $payment->delete();
             return $this->sendResponse(null, 'Payment deleted successfully.');
+        } catch (\Throwable $th) {
+            return $this->sendError($th->getMessage(), null, 500);
+        }
+    }
+    public function checkout(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'billId' => 'required|exists:bills,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors());
+        }
+
+        try {
+            $user = $request->user();
+            $bill = bills::where('id', $request->billId)
+                ->where('user_id', $user->id)
+                ->first();
+            if (!$bill) {
+                return $this->sendError('Bill not found', null, 404);
+            }
+            $invoiceRequest = new CreateInvoiceRequest([
+                'external_id' => (string) $bill->id,
+                'amount' => $bill->amount,
+                'description' => "Credit Order #" . $bill->billId,
+                'customer' => [
+                    'given_names' => $user->first_name . ' ' . $user->last_name,
+                    'email' => $user->email,
+                ],
+                'currency' => 'IDR',
+                'invoice_duration' => 3600, // 1 hour
+                'success_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/success',
+                'failure_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/failure',
+            ]);
+            
+            $invoice = $this->xenditInvoiceApi->createInvoice($invoiceRequest);
+            return $this->sendResponse(['invoice_url' => $invoice->getInvoiceUrl()], 'Checkout URL generated successfully.', 201);
+
+        } catch (\Throwable $th) {
+            return $this->sendError($th->getMessage(), null, 500);
+        }
+    }
+    public function webhook(Request $request)
+    {
+        try {
+            XenditCheckoutWebhook::dispatch($request->all());
+            return $this->sendResponse(null, 'Checkout process started.', 202);
         } catch (\Throwable $th) {
             return $this->sendError($th->getMessage(), null, 500);
         }
