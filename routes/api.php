@@ -32,6 +32,13 @@ Route::prefix('v1')->group(function () {
                 Route::post('/change-password', [AuthController::class, 'changePassword']);
             });
             Route::prefix('bills')->group(function () {
+                Route::prefix('series')->group(function () {
+                    Route::get('/', [BillsController::class, 'getRecurringSeries']);
+                    Route::post('/', [BillsController::class, 'storeBillSeries']);
+                    Route::get('/{id}', [BillsController::class, 'detailBillSeries']);
+                    Route::put('/{id}', [BillsController::class, 'updateBillSeries']);
+                    Route::delete('/{id}', [BillsController::class, 'deleteBillSeries']);
+                });
                 Route::prefix('categories')->group(function () {
                     Route::get('/', [BillCategoriesController::class, 'getBillCategories']);
                     Route::post('/', [BillCategoriesController::class, 'create']);
@@ -39,11 +46,11 @@ Route::prefix('v1')->group(function () {
                     Route::put('/{id}', [BillCategoriesController::class, 'update']);
                     Route::delete('/{id}', [BillCategoriesController::class, 'delete']);
                 });
-                Route::get('/', [BillsController::class, 'index']);
-                Route::post('/', [BillsController::class, 'store']);
-                Route::get('/{id}', [BillsController::class, 'detail']);
-                Route::put('/{id}', [BillsController::class, 'update']);
-                Route::delete('/{id}', [BillsController::class, 'delete']);
+                Route::get('/', [BillsController::class, 'getUpcomingBills']);
+                Route::post('/', [BillsController::class, 'storeBill']);
+                Route::get('/{id}', [BillsController::class, 'detailBill']);
+                Route::put('/{id}', [BillsController::class, 'updateBill']);
+                Route::delete('/{id}', [BillsController::class, 'deleteBill']);
             });
             Route::prefix('payments')->group(function () {
                 Route::get('/', [PaymentsController::class, 'index']);

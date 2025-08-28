@@ -2,28 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\bills;
-use App\Models\bill_categories;
 use App\Models\User;
+use App\Models\bills;
+use App\Models\bill_series;
+use Illuminate\Support\Arr;
+use App\Models\bill_categories;
 use Illuminate\Database\Seeder;
-
-// protected $fillable = [
-//         'user_id',
-//         'bill_category_id',
-//         'name',
-//         'description',
-//         'amount',
-//         'currency',
-//         'billing_type',
-//         'frequency',
-//         'custom_frequency_days',
-//         'first_due_date',
-//         'next_due_date',
-//         'last_paid_date',
-//         'auto_advance',
-//         'notes',
-//         'attachment_url',
-//     ];
 
 class BillsSeeder extends Seeder
 {
@@ -40,21 +24,23 @@ class BillsSeeder extends Seeder
         }
 
         foreach ($userIds as $userId) {
-            bills::factory()
+            bill_series::factory()
                 ->count(2)
                 ->create([
                     'user_id' => $userId,
-                    'bill_category_id' => $billCategoryIds[0],
-                    'name' => 'Sample Bill ' . rand(1, 100),
-                    'amount' => rand(1000, 10000),
-                    'currency' => 'USD',
-                    'billing_type' => 'fixed',
-                    'frequency' => 'monthly',
-                    'custom_frequency_days' => 1,
-                    'due_date' => now()->addDays(rand(1, 30)),
-                    'notes' => 'This is a sample bill for user ID: ' . $userId,
-                    'attachment_url' => null,
-                ]);
+                    // Use Arr::random() to pick a random category ID
+                    'bill_category_id' => Arr::random($billCategoryIds),
+                    'amount' => rand(50, 500) * 1000,
+                    'currency' => 'IDR',
+                ])->each(function ($series) use ($billCategoryIds) { // Pass billCategoryIds to the closure
+                bills::factory()
+                    ->count(3)
+                    ->create([
+                        'user_id' => $series->user_id,
+                        'bill_category_id' => $series->bill_category_id,
+                        'bill_series_id' => $series->id,
+                    ]);
+            });
         }
 
         $this->command->info('Bills seeded successfully!');

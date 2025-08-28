@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\bill_series;
 use App\Models\bill_categories;
 use App\Models\payments;
 use App\Models\User;
@@ -20,6 +21,7 @@ class bills extends Model
     protected $fillable = [
         'user_id',
         'bill_category_id',
+        'bill_series_id',
         'name',
         'description',
         'amount',
@@ -45,9 +47,9 @@ class bills extends Model
         });
     }
 
-    public function user()
+    public function billSeries()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(bill_series::class, 'bill_series_id', 'id');
     }
 
     public function billCategory()

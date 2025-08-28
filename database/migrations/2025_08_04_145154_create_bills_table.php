@@ -20,11 +20,12 @@ return new class extends Migration
             $table->double('amount', 15, 2);
             $table->string('currency', 3)->default('IDR');
             $table->enum('billing_type', ['fixed', 'recurring'])->default('fixed');
-            $table->enum('frequency', ['monthly', 'annual', 'custom'])->default('monthly')->nullable();
-            $table->integer('custom_frequency_days')->default(1)->nullable();
+            $table->enum('frequency', ['monthly', 'annual', 'custom'])->nullable();
+            $table->integer('custom_frequency_days')->nullable();
             $table->date('due_date');
             $table->text('notes')->nullable();
             $table->text('attachment_url')->nullable();
+            $table->enum('status', ['pending', 'paid', 'overdue'])->default('pending');
             $table->timestamps();
         });
     }
