@@ -62,8 +62,8 @@ class bills extends Model
         return $this->belongsTo(bill_categories::class, 'bill_category_id', 'id');
     }
 
-    public function payments()
+    public function payment()
     {
-        return $this->hasMany(payments::class);
+        return $this->hasOne(payments::class);
     }
 }

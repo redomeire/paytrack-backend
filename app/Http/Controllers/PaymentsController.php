@@ -25,10 +25,12 @@ class PaymentsController extends BaseController
     {
         try {
             $userId = $request->user()->id;
+            $search = $request->query('search', '');
             $payments = DB::table('payments')
                 ->join('bills', 'payments.bill_id', '=', 'bills.id')
                 ->join('users', 'bills.user_id', '=', 'users.id')
                 ->where('users.id', $userId)
+                ->where('name', 'like', '%' . $search . '%')
                 ->when($request->has('start_date') && $request->has('end_date'), function ($query) use ($request) {
                     $query->whereBetween('payments.due_date', [
                         $request->query('start_date'),
@@ -37,11 +39,8 @@ class PaymentsController extends BaseController
                 })
                 ->orderBy('paid_date', 'desc')
                 ->select(
-                    'payments.id',
-                    'payments.payment_method',
-                    'payments.amount',
-                    'payments.due_date',
-                    'payments.paid_date',
+                    'payments.*',
+                    'bills.*',
                 )
                 ->paginate(10);
             return $this->sendResponse($payments, 'Payments retrieved successfully.');

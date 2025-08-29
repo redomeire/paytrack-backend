@@ -19,15 +19,17 @@ class BillsController extends BaseController
             $userId = $request->user()->id;
             $search = $request->query('search', '');
             $categoryId = $request->query('bill_category_id');
+            $limit = $request->query('limit', 10);
 
             $bills = bills::where('user_id', $userId)
                 ->when($categoryId, function ($query) use ($categoryId) {
                     return $query->where('bill_category_id', $categoryId);
                 })
                 ->where('name', 'like', '%' . $search . '%')
+                ->where('status', 'pending')
                 ->with('billCategory')
                 ->orderBy('due_date', 'asc')
-                ->paginate(10);
+                ->paginate($limit ?? 10);
 
             return $this->sendResponse(
                 $bills,
@@ -49,9 +51,8 @@ class BillsController extends BaseController
                     return $query->where('bill_category_id', $categoryId);
                 })
                 ->where('name', 'like', '%' . $search . '%')
-                
                 ->with('billCategory') 
-                ->withCount('bills as history_count')
+                ->with('bills')
                 ->orderBy('updated_at', 'desc')
                 ->paginate(10);
 
@@ -122,6 +123,7 @@ class BillsController extends BaseController
                     'due_day' => 'required|integer|min:1|max:31',
                     'start_date' => 'required|date',
                     'is_active' => 'required|boolean',
+                    'attachment_url' => 'nullable|url|max:255',
                 ]
             );
 
@@ -164,6 +166,7 @@ class BillsController extends BaseController
                     'period' => $firstDueDate->startOfMonth(),
                     'due_date' => $firstDueDate,
                     'notes' => 'Invoice pertama dibuat secara otomatis.',
+                    'attachment_url' => $data['attachment_url'] ?? null,
                 ]);
                 return $series;
             });
