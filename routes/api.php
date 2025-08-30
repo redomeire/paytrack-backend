@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillsController;
@@ -71,6 +72,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('/upload', [MediaController::class, 'store']);
             });
             Route::prefix('analytics')->group(function () {
+                Route::get('/summary', [MonthlyCategorySummaryController::class, 'getSummary']);
                 Route::get('/spending-by-category', [MonthlyCategorySummaryController::class, 'getSpendingCountByCategory']);
                 Route::get('/monthly-spending-trend', [MonthlyCategorySummaryController::class, 'getMonthlySpendingTrend']);
             });
