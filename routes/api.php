@@ -6,10 +6,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillsController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\NotificationController;
 use Laravel\Passport\Http\Middleware\CheckToken;
 use App\Http\Controllers\BillCategoriesController;
-use App\Http\Controllers\MonthlyCategorySummaryController;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -72,9 +72,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('/upload', [MediaController::class, 'store']);
             });
             Route::prefix('analytics')->group(function () {
-                Route::get('/summary', [MonthlyCategorySummaryController::class, 'getSummary']);
-                Route::get('/spending-by-category', [MonthlyCategorySummaryController::class, 'getSpendingCountByCategory']);
-                Route::get('/monthly-spending-trend', [MonthlyCategorySummaryController::class, 'getMonthlySpendingTrend']);
+                Route::get('/summary', [AnalyticsController::class, 'getSummary']);
+                Route::get('/spending-by-category', [AnalyticsController::class, 'getSpendingCountByCategory']);
+                Route::get('/monthly-spending-trend', [AnalyticsController::class, 'getMonthlySpendingTrend']);
             });
         });
         Route::middleware([CheckToken::using('admin:notification:crud', 'admin:user:crud'), 'verified'])->group(function () {
