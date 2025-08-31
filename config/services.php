@@ -12,7 +12,7 @@ return [
     | location for this type of information, allowing packages to have
     | a conventional file to locate the various service credentials.
     |
-    */
+     */
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:3000/auth/google/callback'),
+    ],
+
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_API_KEY'),
+        'public_key' => env('XENDIT_PUBLIC_KEY'),
+        'webhook_secret' => env('XENDIT_WEBHOOK_VERIFICATION_TOKEN'),
+    ]
 ];
