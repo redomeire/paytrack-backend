@@ -1,0 +1,118 @@
+# Services adalah tempat kita mendefinisikan semua container yang dibutuhkan
+services:
+  # PHP Service - ini adalah jantung aplikasi Laravel kita
+  php:
+    # Build container dari Dockerfile yang sudah kita buat
+    build:
+      context: .                          # Build context adalah current directory
+      dockerfile: docker/php/Dockerfile   # Path ke Dockerfile kita
+    container_name: laravel_php
+    restart: unless-stopped               # Restart otomatis jika container crash
+    working_dir: /var/www/html
+
+    # Volume mapping memungkinkan sharing file antara host dan container
+    # Ini sangat penting untuk development agar perubahan code langsung terlihat
+    volumes:
+      - ./:/var/www/html                                    # Mount source code
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/99-custom.ini  # Mount PHP config
+
+    # Networks memungkinkan containers berkomunikasi satu sama lain
+    networks:
+      - laravel_network
+
+    # Dependencies memastikan urutan startup yang benar
+    # PHP container akan menunggu MySQL dan Redis ready sebelum start
+    depends_on:
+      - mysql
+      - redis
+
+  # Nginx Service - web server dan reverse proxy
+  nginx:
+    # Menggunakan official Nginx image dengan Alpine Linux
+    image: nginx:alpine
+    container_name: laravel_nginx
+    restart: unless-stopped
+
+    # Port mapping - map port 8080 di host ke port 80 di container
+    # Ini memungkinkan kita akses aplikasi via http://localhost:8080
+    ports:
+      - "8080:80"
+
+    volumes:
+      # Mount source code agar Nginx bisa serve static files
+      - ./:/var/www/html
+      # Mount konfigurasi Nginx yang sudah kita buat
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+    networks:
+      - laravel_network
+
+    # Nginx membutuhkan PHP container untuk memproses PHP files
+    depends_on:
+      - php
+
+  # MySQL Service - database server
+  mysql:
+    # MySQL 8.0 adalah versi LTS yang stable dan performant
+    image: mysql:8.0
+    container_name: laravel_mysql
+    restart: unless-stopped
+
+    # Environment variables untuk konfigurasi MySQL
+    # Ini akan digunakan untuk setup database saat pertama kali container dibuat
+    environment:
+      MYSQL_DATABASE: laravel_db
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel_password
+
+    # Port mapping untuk akses database dari host (opsional)
+    ports:
+      - "3306:3306"
+
+    # Volume untuk persistence data
+    # Tanpa ini, data akan hilang ketika container dihapus
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    networks:
+      - laravel_network
+
+    # Command untuk menggunakan native password authentication
+    # Ini diperlukan untuk kompatibilitas dengan beberapa MySQL clients
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis Service - untuk caching dan session storage
+  redis:
+    # Redis 7 dengan Alpine Linux untuk ukuran yang minimal
+    image: redis:7-alpine
+    container_name: laravel_redis
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    # Volume untuk persistence Redis data
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - laravel_network
+
+    # Command untuk enable AOF (Append Only File) persistence
+    # Ini memastikan data Redis tidak hilang saat restart
+    command: redis-server --appendonly yes
+
+# Networks definition
+# Bridge network memungkinkan containers berkomunikasi menggunakan nama service
+networks:
+  laravel_network:
+    driver: bridge
+
+# Volumes definition untuk data persistence
+# Named volumes ini dikelola oleh Docker dan persisten across container restarts
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
