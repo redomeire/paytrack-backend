@@ -40,7 +40,10 @@ sudo docker-compose exec php php artisan queue:restart
 echo "Menjalankan passport:keys..."
 sudo docker-compose exec php php artisan passport:keys
 
+echo "Mengubah izin storage dan cache folder"
+sudo docker-compose exec php chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
 echo "Mengubah izin oauth-private.key dan oauth-public.key..."
-sudo docker-compose exec php chmod 644 storage/oauth-private.key storage/oauth-public.key
+sudo docker-compose exec php chmod 660 /var/www/html/storage/oauth-*.key
 
 echo "Deployment selesai!"
