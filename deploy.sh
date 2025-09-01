@@ -6,6 +6,10 @@ APP_NAME="paytack-backend"
 
 echo "Memulai proses deployment..."
 
+# 1. login ke Docker Hub
+echo "Login ke Docker Hub..."
+echo "$DOCKERHUB_TOKEN" | sudo docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
 # 2. Menarik image terbaru dari Docker Hub
 echo "Menarik image terbaru: $DOCKERHUB_USERNAME/$APP_NAME:latest"
 sudo docker pull $DOCKERHUB_USERNAME/$APP_NAME:latest
