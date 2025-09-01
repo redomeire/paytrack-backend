@@ -52,6 +52,9 @@ jobs:
             # Pindah ke direktori aplikasi di VPS
             cd /home/${{ secrets.VPS_USERNAME }}/paytrack-backend
 
+            # Pull perubahan terbaru dari repository
+            git pull origin main
+
             # Menjalankan skrip deploy.sh
             ./deploy.sh
         env:
