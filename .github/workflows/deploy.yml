@@ -23,7 +23,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/nama-aplikasi-laravel-anda
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/paytrack-backend
           tags: |
             type=raw,value=latest
 
