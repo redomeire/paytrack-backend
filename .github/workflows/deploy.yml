@@ -57,3 +57,5 @@ jobs:
 
             # Menjalankan skrip deploy.sh
             ./deploy.sh
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
