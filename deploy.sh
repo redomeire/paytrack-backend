@@ -2,7 +2,7 @@
 
 # Ganti dengan username Docker Hub Anda
 DOCKERHUB_USERNAME="redomeire"
-APP_NAME="paytack-backend"
+APP_NAME="paytrack-backend"
 
 echo "Memulai proses deployment..."
 
