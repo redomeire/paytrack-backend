@@ -55,9 +55,6 @@ jobs:
             # Pull perubahan terbaru dari repository
             git pull origin main
 
-            # mengizinkan eksekusi untuk skrip deploy.sh
-            chmod +x deploy.sh
-
             # Menjalankan skrip deploy.sh
             ./deploy.sh
         env:
