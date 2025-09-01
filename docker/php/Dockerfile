@@ -40,7 +40,7 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
 # Copy Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
+WORKDIR /var/w ww/html
 
 # Salin file dependensi dan install (langkah ini di-cache untuk kecepatan build)
 COPY composer.json composer.lock ./
@@ -57,9 +57,16 @@ FROM php:8.3-fpm-alpine
 # Install HANYA ekstensi PHP dan library yang dibutuhkan saat runtime.
 # Kita tidak menyertakan -dev packages, git, curl, dll.
 RUN apk add --no-cache libzip libpng libjpeg-turbo libwebp libxml2 icu \
+    # Tambahkan dependensi build SEMENTARA untuk mengompilasi redis
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
+    # Install ekstensi PHP dari source
     && docker-php-ext-install -j$(nproc) pdo_mysql mbstring exif pcntl bcmath gd zip intl opcache \
+    # Kompilasi dan install redis
     && pecl install redis \
-    && docker-php-ext-enable redis
+    # Aktifkan redis
+    && docker-php-ext-enable redis \
+    # Hapus semua dependensi build yang tidak lagi dibutuhkan untuk menjaga image tetap kecil
+    && apk del .build-deps
 
 WORKDIR /var/www/html
 
@@ -86,3 +93,4 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-custom.ini
 # Expose port dan jalankan server
 EXPOSE 9000
 CMD ["php-fpm"]
+
