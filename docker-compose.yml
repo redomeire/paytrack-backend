@@ -1,9 +1,7 @@
 services:
   # PHP Service - ini adalah jantung aplikasi Laravel kita
   php:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
+    image: redomeire/paytrack-backend:latest
     container_name: laravel_php
     restart: unless-stopped
     working_dir: /var/www/html
