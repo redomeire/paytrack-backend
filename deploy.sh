@@ -8,7 +8,7 @@ echo "Memulai proses deployment..."
 
 # 1. login ke Docker Hub
 echo "Login ke Docker Hub..."
-echo "$DOCKERHUB_TOKEN" | sudo docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+echo "$DOCKERHUB_TOKEN" | sudo docker login -u "$DOCKERHUB_USERNAME" -p $DOCKERHUB_TOKEN
 
 # 2. Menarik image terbaru dari Docker Hub
 echo "Menarik image terbaru: $DOCKERHUB_USERNAME/$APP_NAME:latest"
