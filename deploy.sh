@@ -30,4 +30,7 @@ sudo docker-compose exec app php artisan optimize
 echo "Membersihkan image lama..."
 sudo docker image prune -f
 
+echo "Merestart queue worker..."
+sudo docker-compose exec app php artisan queue:restart
+
 echo "Deployment selesai!"

@@ -8,7 +8,6 @@ services:
     restart: unless-stopped
     working_dir: /var/www/html
 
-    # Mount PHP config aja, JANGAN timpa source code
     volumes:
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/99-custom.ini
 
@@ -29,7 +28,6 @@ services:
       - "8080:80" # bisa diganti ke 80:80 kalau mau akses tanpa :8080
 
     volumes:
-      # Jangan timpa source code, cukup mount config
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
 
     networks:
@@ -56,7 +54,7 @@ services:
       - laravel_network
     command: --default-authentication-plugin=mysql_native_password
 
-  # Redis Service - untuk caching dan session storage
+  # Redis Service - caching
   redis:
     image: redis:7-alpine
     container_name: laravel_redis
@@ -68,6 +66,20 @@ services:
     networks:
       - laravel_network
     command: redis-server --appendonly yes
+
+  worker:
+    image: redomeire/paytrack-backend:latest 
+    container_name: laravel_worker
+    restart: unless-stopped
+    command: "php /var/www/html/artisan queue:work --verbose --tries=3 --timeout=90"
+    volumes:
+      - .:/var/www/html
+    networks:
+      - laravel_network
+    depends_on:
+      - php
+      - mysql
+      - redis
 
 # Networks definition
 networks:
