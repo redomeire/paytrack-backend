@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\MonthlyCategorySummary;
 use App\Http\Controllers\BaseController;
 
-class Analytics extends BaseController
+class AnalyticsController extends BaseController
 {
     public function getSummary(Request $request)
     {
