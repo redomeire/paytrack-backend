@@ -6,6 +6,9 @@ services:
     restart: unless-stopped
     working_dir: /var/www/html
 
+    env_file:
+      - .env
+
     volumes:
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/99-custom.ini
 

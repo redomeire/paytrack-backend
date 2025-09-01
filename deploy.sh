@@ -22,19 +22,25 @@ sudo docker-compose down
 echo "Menjalankan container baru..."
 sudo docker-compose up -d
 
-# 5. Menjalankan perintah post-deployment Laravel di dalam container 'app'
+# 5. Menjalankan perintah post-deployment Laravel di dalam container 'php'
 echo "Menjalankan migrasi database..."
-sudo docker-compose exec app php artisan migrate --force
+sudo docker-compose exec php php artisan migrate --force
 
 echo "Membersihkan dan membuat cache baru..."
-sudo docker-compose exec app php artisan optimize:clear
-sudo docker-compose exec app php artisan optimize
+sudo docker-compose exec php php artisan optimize:clear
+sudo docker-compose exec php php artisan optimize
 
 # 6. Membersihkan image Docker yang tidak terpakai (dangling images)
 echo "Membersihkan image lama..."
 sudo docker image prune -f
 
 echo "Merestart queue worker..."
-sudo docker-compose exec app php artisan queue:restart
+sudo docker-compose exec php php artisan queue:restart
+
+echo "Menjalankan passport:keys..."
+sudo docker-compose exec php php artisan passport:keys
+
+echo "Mengubah izin oauth-private.key dan oauth-public.key..."
+sudo docker-compose exec php chmod 644 storage/oauth-private.key storage/oauth-public.key
 
 echo "Deployment selesai!"
