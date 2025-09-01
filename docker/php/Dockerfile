@@ -1,7 +1,5 @@
-# ================= STAGE 1: BUILDER =================
-FROM php:8.3-fpm-alpine AS builder
+FROM php:8.3-fpm-alpine
 
-# Install semua dependensi OS dan PHP yang dibutuhkan untuk build
 RUN apk add --no-cache \
     git \
     curl \
@@ -16,7 +14,20 @@ RUN apk add --no-cache \
     libwebp-dev \
     icu-dev
 
-# Install ekstensi PHP
+# Penjelasan detail setiap package:
+# git - Untuk composer dan version control
+# curl - Untuk HTTP requests
+# libpng-dev - Untuk image processing (GD extension)
+# libxml2-dev - Untuk XML processing
+# zip/unzip - Untuk compression utilities
+# oniguruma-dev - Untuk mbstring extension
+# libzip-dev - Untuk zip extension
+# freetype-dev - Untuk advanced image processing
+# libjpeg-turbo-dev - Untuk JPEG image support
+# libwebp-dev - Untuk WebP image support
+# icu-dev - Untuk internationalization
+
+# Compile dan install PHP extensions yang dibutuhkan Laravel
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
     pdo_mysql \
@@ -29,60 +40,41 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     intl \
     opcache
 
-# Install ekstensi Redis
+# Install Redis extension untuk caching dan sessions
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del .build-deps
 
-# Copy Composer
+# Copy Composer dari official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-# Salin sisa kode aplikasi
+# Copy seluruh aplikasi ke dalam container
 COPY . .
 
-# ================= STAGE 2: PRODUCTION =================
-FROM php:8.3-fpm-alpine
+# Install dependencies PHP menggunakan Composer
+RUN composer install --optimize-autoloader
 
-RUN apk add --no-cache oniguruma libzip libpng libjpeg-turbo libwebp libxml2 icu \
-    # Tambahkan dependensi build SEMENTARA untuk mengompilasi redis
-    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
-    # Install ekstensi PHP
-    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring exif pcntl bcmath gd zip intl opcache \
-    # Kompilasi dan install redis
-    && pecl install redis \
-    # Aktifkan redis
-    && docker-php-ext-enable redis \
-    # Hapus semua dependensi build yang tidak lagi dibutuhkan
-    && apk del .build-deps
+# Buat direktori yang dibutuhkan Laravel
+RUN mkdir -p /var/www/html/storage/logs \
+    && mkdir -p /var/www/html/storage/framework/cache \
+    && mkdir -p /var/www/html/storage/framework/sessions \
+    && mkdir -p /var/www/html/storage/framework/views \
+    && mkdir -p /var/www/html/bootstrap/cache
 
-WORKDIR /var/www/html
-
-# Salin HANYA hasil akhir (kode + vendor) dari panggung "builder".
-COPY --from=builder /var/www/html .
-
-# Buat direktori dan atur izin
-RUN mkdir -p \
-    storage/logs \
-    storage/framework/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    bootstrap/cache \
-    && chown -R www-data:www-data /var/www/html \
+# Set proper ownership dan permissions
+RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html/storage -type f -exec chmod 664 {} \; \
-    && find /var/w ww/html/storage -type d -exec chmod 775 {} \; \
+    && find /var/www/html/storage -type d -exec chmod 775 {} \; \
     && find /var/www/html/bootstrap/cache -type f -exec chmod 664 {} \; \
     && find /var/www/html/bootstrap/cache -type d -exec chmod 775 {} \;
 
-# Salin konfigurasi PHP kustom Anda
+# Copy PHP configuration
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-custom.ini
 
-# Expose port dan jalankan server
+# Expose port 9000 dan start php-fpm server
 EXPOSE 9000
 CMD ["php-fpm"]
-
