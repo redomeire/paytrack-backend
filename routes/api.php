@@ -66,7 +66,8 @@ Route::prefix('v1')->group(function () {
             });
             Route::prefix('notification')->group(function () {
                 Route::get('/', [NotificationController::class, 'getAllNotificationUser']);
-                Route::post('/{readId}', [NotificationController::class, 'readNotification']);
+                Route::put('/read-all', [NotificationController::class, 'readAllNotifications']);
+                Route::put('/{readId}', [NotificationController::class, 'readNotification']);
             });
             Route::prefix('media')->group(function () {
                 Route::post('/upload', [MediaController::class, 'store']);

@@ -40,13 +40,16 @@ class NotificationController extends BaseController
         }
     }
     // USER : membaca notifikasi tertentu
-    public function readNotification($readId)
+    public function readNotification(Request $request, $readId)
     {
         $userId = $request->user()->id;
         try {
-            $notification = notification_read::find($readId);
-            if (!$notification || $notification->user_id !== $userId) {
-                return $this->sendError('Notification not found', _, 404);
+            $notification = notification_read::where([
+                'id' => $readId,
+                'user_id' => $userId,
+            ])->first();
+            if (!$notification) {
+                return $this->sendError('Notification not found', [], 404);
             }
             $notification->is_read = true;
             $notification->read_at = now();
@@ -55,7 +58,25 @@ class NotificationController extends BaseController
             return $this->sendResponse($notification, 'Notification has been read successfully');
         } catch (\Exception $e) {
             Log::error('Error reading notification: ' . $e->getMessage());
-            return $this->sendError('Server error', _, 500);
+            return $this->sendError('Server error', [], 500);
+        }
+    }
+    // User: membaca semua notifikasi
+    public function readAllNotifications(Request $request)
+    {
+        $userId = $request->user()->id;
+        try {
+            $updated = notification_read::where('user_id', $userId)
+                ->where('is_read', false)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now(),
+                ]);
+
+            return $this->sendResponse([], 'All notifications have been marked as read');
+        } catch (\Exception $e) {
+            Log::error('Error marking all notifications as read: ' . $e->getMessage());
+            return $this->sendError('Server error', [], 500);
         }
     }
     // ADMIN : mendapatkan semua notifikasi public
