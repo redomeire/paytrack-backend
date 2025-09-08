@@ -2,15 +2,19 @@
 
 namespace App\Jobs;
 
-use App\Models\User;
-use App\Models\bills;
-use App\Models\payments;
 use App\Mail\PaymentFailed;
 use App\Mail\PaymentSuccess;
+use App\Models\bills;
+use App\Models\notification;
+use App\Models\notification_read;
+use App\Models\notification_type;
+use App\Models\payments;
+use App\Models\User;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class XenditCheckoutWebhook implements ShouldQueue
 {
@@ -65,13 +69,29 @@ class XenditCheckoutWebhook implements ShouldQueue
                     if ($bill->user_id) {
                         $user = User::find($bill->user_id);
                         Mail::to($user->email)->send(new PaymentSuccess($bill));
-                    }
 
+                        $this->createNotification(
+                            $bill->user_id,
+                            $bill->id,
+                            'Pembayaran Berhasil',
+                            "Pembayaran untuk tagihan '{$bill->title}' sebesar {$bill->amount} telah berhasil.",
+                            'Payment_Status_Success',
+                            'Notifikasi ini dikirimkan ketika pembayaran tagihan berhasil.'
+                        );
+                    }
                 } elseif ($status === 'EXPIRED') {
                     $bill->status = 'overdue';
                     $bill->save();
                     Log::warning("Tagihan #{$bill->id} kedaluwarsa.");
 
+                    $this->createNotification(
+                        $bill->user_id,
+                        $bill->id,
+                        'Tagihan Kedaluwarsa',
+                        "Tagihan '{$bill->title}' telah kedaluwarsa dan belum dibayar.",
+                        'Payment_Status_Expired',
+                        'Notifikasi ini dikirimkan ketika tagihan telah kedaluwarsa tanpa pembayaran.'
+                    );
                 } elseif ($status === 'FAILED') {
                     $bill->status = 'failed';
                     $bill->save();
@@ -82,12 +102,61 @@ class XenditCheckoutWebhook implements ShouldQueue
                         $user = User::find($bill->user_id);
                         Mail::to($user->email)->send(new PaymentFailed($bill));
                     }
+
+                    $this->createNotification(
+                        $bill->user_id,
+                        $bill->id,
+                        'Pembayaran Gagal',
+                        "Pembayaran untuk tagihan '{$bill->title}' gagal. Silakan coba lagi.",
+                        'Payment_Status_Failed',
+                        'Notifikasi ini dikirimkan ketika pembayaran tagihan gagal.'
+                    );
                 }
             } else {
                 Log::warning("Tagihan dengan ID '{$invoiceId}' tidak ditemukan.");
             }
         } catch (\Throwable $th) {
             Log::error('Error processing Xendit webhook: ' . $th->getMessage(), $this->payload);
+            throw $th;
+        }
+    }
+
+    private function createNotification(
+        $userId,
+        $billId,
+        $title,
+        $message,
+        $type = 'Payment_Status_Success',
+        $description
+    ): void {
+        try {
+            Log::info("Creating notification for bill ID {$billId} and user ID {$userId}");
+            $notificationType = notification_type::firstOrCreate([
+                'name' => $type,
+            ], [
+                'name' => $type,
+                'description' => $description,
+            ]);
+            if (!$notificationType) {
+                Log::error("Notification type ID {$typeId} not found.");
+                return;
+            }
+            // create transaction
+            DB::transaction(function () use ($userId, $billId, $notificationType, $title, $message) {
+                $notification = notification::create([
+                    'bill_id' => $billId,
+                    'notification_type_id' => $notificationType->id,
+                    'title' => $title,
+                    'message' => $message,
+                ]);
+
+                notification_read::create([
+                    'notification_id' => $notification->id,
+                    'user_id' => $userId,
+                ]);
+            });
+        } catch (\Throwable $th) {
+            Log::error('Error creating notification: ' . $th->getMessage());
             throw $th;
         }
     }
