@@ -62,7 +62,7 @@ services:
       - redis_data:/data
     networks:
       - laravel_network
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --replica-read-only no
 
   worker:
     image: redomeire/paytrack-backend:latest 
