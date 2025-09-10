@@ -26,7 +26,7 @@ Route::prefix('v1')->group(function () {
             Route::get('google/callback', [AuthController::class, 'handleSocialAuthorize']);
         });
     });
-    Route::post('/payments/webhook/xendit/checkout', [PaymentsController::class, 'webhook']);
+    Route::post('/payments/webhook/xendit/checkout', [PaymentsController::class, 'checkoutWebhook']);
     Route::middleware('auth:api')->group(function () {
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);

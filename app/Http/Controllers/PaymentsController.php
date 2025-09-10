@@ -7,8 +7,9 @@ use App\Models\payments;
 use Xendit\Configuration;
 use Illuminate\Http\Request;
 use Xendit\Invoice\InvoiceApi;
+use App\Jobs\RetrievePayoutJob;
+use App\Jobs\RetrieveCheckoutJob;
 use Illuminate\Support\Facades\DB;
-use App\Jobs\XenditCheckoutWebhook;
 use App\Http\Controllers\BaseController;
 use Xendit\Invoice\CreateInvoiceRequest;
 use Illuminate\Support\Facades\Validator;
@@ -179,11 +180,24 @@ class PaymentsController extends BaseController
             return $this->sendError($th->getMessage(), null, 500);
         }
     }
-    public function webhook(Request $request)
+    public function checkoutWebhook(Request $request)
     {
         try {
-            XenditCheckoutWebhook::dispatch($request->all());
+            Log::info('Checkout webhook received. Payload:', $request->all());
+            RetrieveCheckoutJob::dispatch($request->all());
             return $this->sendResponse(null, 'Checkout process started.', 202);
+        } catch (\Throwable $th) {
+            return $this->sendError($th->getMessage(), null, 500);
+        }
+    }
+    public function payoutWebhook(Request $request)
+    {
+        try {
+            Log::info('Payout webhook received. Payload:', $request->all());
+            $response = $request->all();
+            $data = $response['data'] ?? [];
+            RetrievePayoutJob::dispatch($data);
+            return $this->sendResponse(null, 'Payout webhook received.', 200);
         } catch (\Throwable $th) {
             return $this->sendError($th->getMessage(), null, 500);
         }
