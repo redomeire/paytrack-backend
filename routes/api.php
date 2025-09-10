@@ -27,6 +27,7 @@ Route::prefix('v1')->group(function () {
         });
     });
     Route::post('/payments/webhook/xendit/checkout', [PaymentsController::class, 'checkoutWebhook']);
+    Route::post('/payments/webhook/xendit/payout', [PaymentsController::class, 'payoutWebhook']);
     Route::middleware('auth:api')->group(function () {
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
