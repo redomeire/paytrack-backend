@@ -2,12 +2,14 @@
 
 namespace App\Jobs;
 
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\bills;
 use App\Models\payments;
-use App\Dto\NotificationDto;
 use App\Mail\PaymentFailed;
+use App\Dto\NotificationDto;
 use App\Mail\PaymentSuccess;
+use Xendit\Payout\PayoutApi;
 use App\Jobs\ProcessPayoutJob;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -56,7 +58,7 @@ class RetrieveCheckoutJob implements ShouldQueue
                     'bill_id' => $bill->id,
                     'amount' => $this->payload['paid_amount'] ?? 0,
                     'currency' => $this->payload['currency'] ?? 'IDR',
-                    'paid_date' => $this->payload['paid_at'] ? \Carbon\Carbon::parse($this->payload['paid_at']) : now(),
+                    'paid_date' => $this->payload['paid_at'] ? Carbon::parse($this->payload['paid_at']) : now(),
                     'due_date' => $bill->due_date ?? now(),
                     'payment_method' => $this->payload['payment_method'] ?? 'Xendit',
                     'payment_reference' => $this->payload['id'] ?? null,
@@ -68,20 +70,20 @@ class RetrieveCheckoutJob implements ShouldQueue
                 $bill->status = 'paid';
                 $bill->save();
                 Log::info("Tagihan #{$bill->id} berhasil diperbarui menjadi 'paid'.");
-
+                ProcessPayoutJob::dispatch($this->payload, $bill);
                 if ($bill->user_id) {
-                    ProcessPayoutJob::dispatch($this->payload, $bill)->onQueue('payouts');
-
                     $user = User::find($bill->user_id);
                     Mail::to($user->email)->send(new PaymentSuccess($bill));
 
                     $notificationService->createNotification(
-                        $bill->user_id,
-                        $bill->id,
-                        'Pembayaran Berhasil',
-                        "Pembayaran untuk tagihan '{$bill->name}' sebesar {$bill->amount} telah berhasil.",
-                        'Payment_Status_Success',
-                        'Notifikasi ini dikirimkan ketika pembayaran tagihan berhasil.'
+                        new NotificationDto(
+                            userId: $bill->user_id,
+                            billId: $bill->id,
+                            title: 'Pembayaran Berhasil',
+                            message: "Pembayaran untuk tagihan '{$bill->name}' sebesar {$bill->amount} telah berhasil.",
+                            type: 'Payment_Status_Success',
+                            description: 'Notifikasi ini dikirimkan ketika pembayaran tagihan berhasil.'
+                        )
                     );
                 }
             } elseif ($status === 'EXPIRED') {
@@ -98,12 +100,14 @@ class RetrieveCheckoutJob implements ShouldQueue
                 ]);
 
                 $notificationsService->createNotification(
-                    $bill->user_id,
-                    $bill->id,
-                    'Tagihan Kedaluwarsa',
-                    "Tagihan '{$bill->name}' telah kedaluwarsa dan belum dibayar.",
-                    'Payment_Status_Expired',
-                    'Notifikasi ini dikirimkan ketika tagihan telah kedaluwarsa tanpa pembayaran.'
+                    new NotificationDto(
+                        userId: $bill->user_id,
+                        billId: $bill->id,
+                        title: 'Tagihan Kedaluwarsa',
+                        message: "Tagihan '{$bill->name}' telah kedaluwarsa dan belum dibayar.",
+                        type: 'Payment_Status_Expired',
+                        description: 'Notifikasi ini dikirimkan ketika tagihan telah kedaluwarsa tanpa pembayaran.'
+                    )
                 );
             } elseif ($status === 'FAILED') {
                 Log::warning("Tagihan #{$bill->id} gagal.");
@@ -119,19 +123,20 @@ class RetrieveCheckoutJob implements ShouldQueue
                     'notes' => 'Payment failed via Xendit Webhook',
                 ]);
 
-
                 if ($bill->user_id) {
                     $user = User::find($bill->user_id);
                     Mail::to($user->email)->send(new PaymentFailed($bill));
                 }
 
                 $notificationService->createNotification(
-                    $bill->user_id,
-                    $bill->id,
-                    'Pembayaran Gagal',
-                    "Pembayaran untuk tagihan '{$bill->name}' gagal. Silakan coba lagi.",
-                    'Payment_Status_Failed',
-                    'Notifikasi ini dikirimkan ketika pembayaran tagihan gagal.'
+                    new NotificationDto(
+                        userId: $bill->user_id,
+                        billId: $bill->id,
+                        title: 'Pembayaran Gagal',
+                        message: "Pembayaran untuk tagihan '{$bill->name}' gagal. Silakan coba lagi.",
+                        type: 'Payment_Status_Failed',
+                        description: 'Notifikasi ini dikirimkan ketika pembayaran tagihan gagal.'
+                    )
                 );
             }
         } catch (\Throwable $th) {

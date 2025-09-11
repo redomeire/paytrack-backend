@@ -20,7 +20,7 @@ class NotificationService
                 'description' => $dto->description,
             ]);
             if (!$notificationType) {
-                Log::error("Notification type ID {$dto->typeId} not found.");
+                Log::error("Notification type ID {$dto->type} not found.");
                 return;
             }
             DB::transaction(

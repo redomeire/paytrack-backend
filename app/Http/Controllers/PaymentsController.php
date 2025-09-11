@@ -6,21 +6,23 @@ use App\Models\bills;
 use App\Models\payments;
 use Xendit\Configuration;
 use Illuminate\Http\Request;
+use Xendit\Payout\PayoutApi;
 use Xendit\Invoice\InvoiceApi;
 use App\Jobs\RetrievePayoutJob;
+use App\Services\XenditService;
 use App\Jobs\RetrieveCheckoutJob;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\BaseController;
 use Xendit\Invoice\CreateInvoiceRequest;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentsController extends BaseController
 {
-    private $xenditInvoiceApi;
-    public function __construct()
+    protected XenditService $xenditService;
+    public function __construct(XenditService $xenditService)
     {
-        Configuration::setXenditKey(config('services.xendit.secret_key'));
-        $this->xenditInvoiceApi = new InvoiceApi();
+        $this->xenditService = $xenditService;
     }
     public function index(Request $request)
     {
@@ -159,21 +161,7 @@ class PaymentsController extends BaseController
             if (!$bill) {
                 return $this->sendError('Bill not found', null, 404);
             }
-            $invoiceRequest = new CreateInvoiceRequest([
-                'external_id' => $bill->id,
-                'amount' => $bill->amount,
-                'description' => "Credit Order #" . $bill->billId,
-                'customer' => [
-                    'given_names' => $user->first_name . ' ' . $user->last_name,
-                    'email' => $user->email,
-                ],
-                'currency' => 'IDR',
-                'invoice_duration' => 3600, // 1 hour
-                'success_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/success',
-                'failure_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/failure?billId=' . $bill->id,
-            ]);
-            
-            $invoice = $this->xenditInvoiceApi->createInvoice($invoiceRequest);
+            $invoice = $this->xenditService->createInvoice($bill, $user);
             return $this->sendResponse(['invoice_url' => $invoice->getInvoiceUrl()], 'Checkout URL generated successfully.', 201);
 
         } catch (\Throwable $th) {
@@ -183,8 +171,9 @@ class PaymentsController extends BaseController
     public function checkoutWebhook(Request $request)
     {
         try {
+            $payload = $request->all();
             Log::info('Checkout webhook received. Payload:', $request->all());
-            RetrieveCheckoutJob::dispatch($request->all());
+            RetrieveCheckoutJob::dispatch($payload);
             return $this->sendResponse(null, 'Checkout process started.', 202);
         } catch (\Throwable $th) {
             return $this->sendError($th->getMessage(), null, 500);

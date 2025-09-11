@@ -80,7 +80,7 @@ class RetrievePayoutJob implements ShouldQueue
                         billId: $billId,
                         title: $data['title'],
                         message: $data['message'],
-                        notificationTypeCode: $data['type'],
+                        type: $data['type'],
                         description: $data['description']
                     )
                 );
