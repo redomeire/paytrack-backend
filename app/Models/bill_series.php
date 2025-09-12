@@ -6,8 +6,9 @@ use App\Models\User;
 use App\Models\bills;
 use Illuminate\Support\Str;
 use App\Models\bill_categories;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BillingInformation;
 
+use Illuminate\Database\Eloquent\Model;
 use Database\Factories\BillSeriesFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -66,5 +67,10 @@ class bill_series extends Model
     public function billCategory()
     {
         return $this->belongsTo(bill_categories::class, 'bill_category_id', 'id');
+    }
+
+    public function billingInformation()
+    {
+        return $this->belongsTo(BillingInformation::class);
     }
 }

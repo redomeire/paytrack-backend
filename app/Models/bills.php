@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use App\Models\bill_series;
-use App\Models\bill_categories;
-use App\Models\payments;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\payments;
+use App\Models\bill_series;
 use Illuminate\Support\Str;
+use App\Models\bill_categories;
+use App\Models\BillingInformation;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class bills extends Model
 {
@@ -65,5 +66,10 @@ class bills extends Model
     public function payment()
     {
         return $this->hasOne(payments::class);
+    }
+
+    public function billingInformation()
+    {
+        return $this->belongsTo(BillingInformation::class);
     }
 }

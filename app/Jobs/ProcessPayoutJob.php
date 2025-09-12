@@ -33,9 +33,10 @@ class ProcessPayoutJob implements ShouldQueue
         XenditService $xenditService
     ): void {
         try {
-            
+            Log::info('Payout request : ', (array) $this->payload);
+
             $result = $xenditService->createPayout($this->payload, $this->bill);
-            Log::info('Payout result', (array) $result);
+            Log::info('Payout result : ', (array) $result);
 
             if (!$result) {
                 Log::error("Payout creation failed for bill ID {$this->bill->id}");

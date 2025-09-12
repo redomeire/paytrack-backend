@@ -10,6 +10,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\NotificationController;
 use Laravel\Passport\Http\Middleware\CheckToken;
 use App\Http\Controllers\BillCategoriesController;
+use App\Http\Controllers\BillingInformationController;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -77,6 +78,13 @@ Route::prefix('v1')->group(function () {
                 Route::get('/summary', [AnalyticsController::class, 'getSummary']);
                 Route::get('/spending-by-category', [AnalyticsController::class, 'getSpendingCountByCategory']);
                 Route::get('/monthly-spending-trend', [AnalyticsController::class, 'getMonthlySpendingTrend']);
+            });
+            Route::prefix('billing-information')->group(function () {
+                Route::get('/', [BillingInformationController::class, 'index']);
+                Route::post('/', [BillingInformationController::class, 'store']);
+                Route::get('/{id}', [BillingInformationController::class, 'show']);
+                Route::put('/{id}', [BillingInformationController::class, 'update']);
+                Route::delete('/{id}', [BillingInformationController::class, 'delete']);
             });
         });
         Route::middleware([CheckToken::using('admin:notification:crud', 'admin:user:crud'), 'verified'])->group(function () {

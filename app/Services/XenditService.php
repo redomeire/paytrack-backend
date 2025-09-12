@@ -1,15 +1,15 @@
 <?php
 namespace App\Services;
 
-use App\Models\User;
 use App\Models\bills;
-use Xendit\Configuration;
-use Xendit\Payout\PayoutApi;
-use Xendit\Invoice\InvoiceApi;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Xendit\Payout\CreatePayoutRequest;
+use Xendit\Configuration;
 use Xendit\Invoice\CreateInvoiceRequest;
+use Xendit\Invoice\InvoiceApi;
+use Xendit\Payout\CreatePayoutRequest;
+use Xendit\Payout\PayoutApi;
 
 class XenditService
 {
@@ -87,22 +87,28 @@ class XenditService
     public function createPayout(array $payload, bills $bill)
     {
         try {
+            $idempotency_key = 'payout-' . uniqid();
             $payoutRequestPayload = [
-                'reference_id' => 'ref-
-                ',
-                'channel_code' => $payload['payment_channel'],
+                'reference_id' => 'ref-' . uniqid(),
+                'channel_code' => 'ID_' . $payload['payment_channel'],
                 'amount' => $payload['amount'],
                 'currency' => $payload['currency'],
                 'channel_properties' => [
                     'account_number' => $payload['payment_destination'],
+                    'account_holder_name' => $payload['account_holder_name'],
                 ],
                 'metadata' => [
                     'user_id' => $bill->user_id,
                     'bill_id' => $bill->id,
                 ],
+                'type' => 'DIRECT_DISBURSEMENT'
             ];
-            $payoutRequest = new CreatePayoutRequest($payoutRequestPayload);
-            $payoutPayload = $this->payoutApi->createPayout($payoutRequest);
+            $create_payout_request = new CreatePayoutRequest($payoutRequestPayload);
+            $payoutPayload = $this->payoutApi->createPayout(
+                $idempotency_key, 
+                null, 
+                $create_payout_request
+            );
             return $payoutPayload;
         } catch (\Throwable $th) {
             Log::error("Payout creation error: " . $th->getMessage());
