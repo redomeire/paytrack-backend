@@ -56,6 +56,7 @@ Route::prefix('v1')->group(function () {
                     Route::post('/', [BillingInformationController::class, 'store']);
                     Route::get('/{id}', [BillingInformationController::class, 'show']);
                     Route::put('/{id}', [BillingInformationController::class, 'update']);
+                    Route::put('/{id}/set-as-default', [BillingInformationController::class, 'setAsDefault']);
                     Route::delete('/{id}', [BillingInformationController::class, 'delete']);
                 });
                 Route::get('/', [BillsController::class, 'getUpcomingBills']);

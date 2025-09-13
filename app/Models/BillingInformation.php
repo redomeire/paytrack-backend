@@ -23,6 +23,7 @@ class BillingInformation extends Model
         'name',
         'type',
         'details',
+        'default'
     ];
 
     public static function boot()
