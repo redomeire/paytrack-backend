@@ -175,6 +175,10 @@ class BillsController extends BaseController
                     'due_date' => $firstDueDate,
                     'notes' => 'Invoice pertama dibuat secara otomatis.',
                     'attachment_url' => $data['attachment_url'] ?? null,
+                    'billing_information_id' => $data['billing_information_id'] ?? null,
+                    'account_number' => $data['account_number'],
+                    'account_name' => $data['account_name'],
+                    'bank_code' => $data['bank_code'],
                 ]);
                 return $series;
             });

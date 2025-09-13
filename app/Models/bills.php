@@ -33,6 +33,10 @@ class bills extends Model
         'due_date',
         'notes',
         'attachment_url',
+        'billing_information_id',
+        'account_number',
+        'account_name',
+        'bank_code',
     ];
 
     protected $casts = [

@@ -49,7 +49,7 @@ class ProcessPayoutJob implements ShouldQueue
                     billId: $this->bill->id,
                     type: 'Payout_Initiated',
                     title: 'Payout Initiated',
-                    message: "Payout of {$this->payload['amount']} {$this->payload['currency']} initiated to {$this->payload['payment_destination']} via {$this->payload['payment_channel']}.",
+                    message: "Payout of {$this->payload['currency']} {$this->payload['amount']} initiated via {$this->payload['payment_channel']}.",
                     description: 'A payout has been initiated.'
                 ));
         } catch (\Throwable $th) {

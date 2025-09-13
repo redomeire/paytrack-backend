@@ -32,7 +32,11 @@ class bill_series extends Model
         'start_date',
         'is_active',
         'amount',
-        'currency'
+        'currency',
+        'billing_information_id',
+        'account_number',
+        'account_name',
+        'bank_code',
     ];
 
     protected $casts = [

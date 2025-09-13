@@ -1,15 +1,16 @@
 <?php
 namespace App\Services;
 
-use App\Models\bills;
 use App\Models\User;
+use App\Models\bills;
+use Xendit\Configuration;
+use Xendit\Payout\PayoutApi;
+use Xendit\Invoice\InvoiceApi;
+use App\Models\BillingInformation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Xendit\Configuration;
-use Xendit\Invoice\CreateInvoiceRequest;
-use Xendit\Invoice\InvoiceApi;
 use Xendit\Payout\CreatePayoutRequest;
-use Xendit\Payout\PayoutApi;
+use Xendit\Invoice\CreateInvoiceRequest;
 
 class XenditService
 {
@@ -90,12 +91,12 @@ class XenditService
             $idempotency_key = 'payout-' . uniqid();
             $payoutRequestPayload = [
                 'reference_id' => 'ref-' . uniqid(),
-                'channel_code' => 'ID_' . $payload['payment_channel'],
+                'channel_code' => 'ID_' . $bill->bank_code,
                 'amount' => $payload['amount'],
                 'currency' => $payload['currency'],
                 'channel_properties' => [
-                    'account_number' => $payload['payment_destination'] ?? $bill->billingInformation->account_number,
-                    'account_holder_name' => $payload['account_holder_name'] ?? $bill->billingInformation->account_name,
+                    'account_number' => $payload['payment_destination'] ?? $bill->account_number,
+                    'account_holder_name' => $payload['account_holder_name'] ?? $bill->account_name,
                 ],
                 'metadata' => [
                     'user_id' => $bill->user_id,
