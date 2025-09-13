@@ -94,8 +94,8 @@ class XenditService
                 'amount' => $payload['amount'],
                 'currency' => $payload['currency'],
                 'channel_properties' => [
-                    'account_number' => $payload['payment_destination'],
-                    'account_holder_name' => $payload['account_holder_name'],
+                    'account_number' => $payload['payment_destination'] ?? $bill->billingInformation->account_number,
+                    'account_holder_name' => $payload['account_holder_name'] ?? $bill->billingInformation->account_name,
                 ],
                 'metadata' => [
                     'user_id' => $bill->user_id,

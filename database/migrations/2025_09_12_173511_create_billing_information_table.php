@@ -24,17 +24,25 @@ return new class extends Migration
         // add foreign key to bills
         Schema::table('bills', function (Blueprint $table) {
             $table->foreignUuid('billing_information_id')
+                ->nullable()
                 ->after('bill_category_id')
                 ->constrained('billing_information')
                 ->onDelete('cascade');
+            $table->string('account_number', 50)->after('amount');
+            $table->string('account_name', 100)->after('account_number');
+            $table->string('bank_code', 20)->after('account_name');
         });
 
         // add foreign key to bill_series
         Schema::table('bill_series', function (Blueprint $table) {
             $table->foreignUuid('billing_information_id')
+                ->nullable()
                 ->after('bill_category_id')
                 ->constrained('billing_information')
                 ->onDelete('cascade');
+            $table->string('account_number', 50)->after('amount');
+            $table->string('account_name', 100)->after('account_number');
+            $table->string('bank_code', 20)->after('account_name');
         });
     }
 

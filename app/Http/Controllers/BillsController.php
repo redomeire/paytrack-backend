@@ -80,6 +80,10 @@ class BillsController extends BaseController
                     'period' => 'nullable|string',
                     'notes' => 'nullable|string|max:500',
                     'attachment_url' => 'nullable|url|max:255',
+                    'billing_information_id' => 'nullable|exists:billing_information,id',
+                    'account_number' => 'required|string|max:50',
+                    'account_name' => 'required|string|max:100',
+                    'bank_code' => 'required|string|max:20',
                 ]
             );
 
@@ -124,6 +128,10 @@ class BillsController extends BaseController
                     'start_date' => 'required|date',
                     'is_active' => 'required|boolean',
                     'attachment_url' => 'nullable|url|max:255',
+                    'billing_information_id' => 'nullable|exists:billing_information,id',
+                    'account_number' => 'required|string|max:50',
+                    'account_name' => 'required|string|max:100',
+                    'bank_code' => 'required|string|max:20',
                 ]
             );
 

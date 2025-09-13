@@ -14,10 +14,18 @@ class BillingInformationController extends BaseController
     {
         try {
             $user = $request->user();
-            $billingInformation = BillingInformation::where('user_id', $user->id)->get();
-            if ($billingInformation->isEmpty()) {
-                return $this->sendError('No Billing Information found.', [], 404);
-            }
+            $search = $request->query('search');
+            $type = $request->query('type');
+            $billingInformation = BillingInformation::where('user_id', $user->id)
+            ->where(function ($query) use ($search, $type) {
+                if ($search) {
+                    $query->where('name', 'like', '%' . $search . '%');
+                }
+                if ($type) {
+                    $query->where('type', $type);
+                }
+            })
+            ->paginate(10);
             return $this->sendResponse($billingInformation, 'Billing Information retrieved successfully.');
         } catch (\Throwable $th) {
             Log::error('Error retrieving billing information: ' . $th->getMessage());
@@ -30,7 +38,8 @@ class BillingInformationController extends BaseController
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'type' => 'required|in:BANK_ACCOUNT,EWALLET',
-            'details' => 'required|array',
+            'details' => 'required|string',
+            'default' => 'sometimes|required|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -44,7 +53,8 @@ class BillingInformationController extends BaseController
                 'user_id' => $user->id,
                 'name' => $payload['name'],
                 'type' => $payload['type'],
-                'details' => json_encode($payload['details']),
+                'details' => $payload['details'],
+                'default' => $payload['default'],
             ]);
             return $this->sendResponse($billingInformation, 'Billing Information created successfully.', 201);
         } catch (\Throwable $th) {
