@@ -1,14 +1,26 @@
 <?php
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\bills;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Xendit\Configuration;
+use Xendit\Payout\PayoutApi;
 use Xendit\Invoice\InvoiceApi;
+use App\Models\BillingInformation;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Xendit\Payout\CreatePayoutRequest;
+use Xendit\Invoice\CreateInvoiceRequest;
 
 class XenditService
 {
+    protected InvoiceApi $invoiceApi;
+    protected PayoutApi $payoutApi;
+    public function __construct(InvoiceApi $invoiceApi, PayoutApi $payoutApi)
+    {
+        $this->invoiceApi = $invoiceApi;
+        $this->payoutApi = $payoutApi;
+    }
     public static function isHasUnpaidBills($userId = null)
     {
         $unpaidOrders = bills::when($userId, function ($q) use ($userId) {
@@ -34,7 +46,7 @@ class XenditService
 
             DB::transaction(function () use ($bill, $invoice) {
                 $bill->update([
-                    'status' => 'overdue'
+                    'status' => 'overdue',
                 ]);
             });
         }
@@ -46,6 +58,61 @@ class XenditService
 
         foreach ($unpaidBills as $unpaidBill) {
             self::updateExpiredInvoice($unpaidBill->id);
+        }
+    }
+
+    public function createInvoice(bills $bill, User $user)
+    {
+        try {
+            $invoiceRequestPayload = [
+                'external_id' => $bill->id,
+                'amount' => $bill->amount,
+                'description' => "Credit Order #" . $bill->billId,
+                'customer' => [
+                    'given_names' => $user->first_name . ' ' . $user->last_name,
+                    'email' => $user->email,
+                ],
+                'currency' => 'IDR',
+                'invoice_duration' => 3600, // 1 hour
+                'success_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/success',
+                'failure_redirect_url' => '' . config('app.frontend_url') . '/payment/checkout/failure?billId=' . $bill->id,
+            ];
+            $invoiceRequest = new CreateInvoiceRequest($invoiceRequestPayload);
+            $invoicePayload = $this->invoiceApi->createInvoice($invoiceRequest);
+            return $invoicePayload;
+        } catch (\Throwable $th) {
+            Log::error("message: " . $th->getMessage() . " file: " . $th->getFile() . " line: " . $th->getLine());
+        }
+    }
+
+    public function createPayout(array $payload, bills $bill)
+    {
+        try {
+            $idempotency_key = 'payout-' . uniqid();
+            $payoutRequestPayload = [
+                'reference_id' => 'ref-' . uniqid(),
+                'channel_code' => 'ID_' . $bill->bank_code,
+                'amount' => $payload['amount'],
+                'currency' => $payload['currency'],
+                'channel_properties' => [
+                    'account_number' => $payload['payment_destination'] ?? $bill->account_number,
+                    'account_holder_name' => $payload['account_holder_name'] ?? $bill->account_name,
+                ],
+                'metadata' => [
+                    'user_id' => $bill->user_id,
+                    'bill_id' => $bill->id,
+                ],
+                'type' => 'DIRECT_DISBURSEMENT'
+            ];
+            $create_payout_request = new CreatePayoutRequest($payoutRequestPayload);
+            $payoutPayload = $this->payoutApi->createPayout(
+                $idempotency_key, 
+                null, 
+                $create_payout_request
+            );
+            return $payoutPayload;
+        } catch (\Throwable $th) {
+            Log::error("Payout creation error: " . $th->getMessage());
         }
     }
 }

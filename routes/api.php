@@ -1,15 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BillCategoriesController;
+use App\Http\Controllers\BillingInformationController;
 use App\Http\Controllers\BillsController;
 use App\Http\Controllers\MediaController;
-use App\Http\Controllers\PaymentsController;
-use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PaymentsController;
+use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckToken;
-use App\Http\Controllers\BillCategoriesController;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -26,7 +26,8 @@ Route::prefix('v1')->group(function () {
             Route::get('google/callback', [AuthController::class, 'handleSocialAuthorize']);
         });
     });
-    Route::post('/payments/webhook/xendit/checkout', [PaymentsController::class, 'webhook']);
+    Route::post('/payments/webhook/xendit/checkout', [PaymentsController::class, 'checkoutWebhook']);
+    Route::post('/payments/webhook/xendit/payout', [PaymentsController::class, 'payoutWebhook']);
     Route::middleware('auth:api')->group(function () {
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
@@ -49,6 +50,14 @@ Route::prefix('v1')->group(function () {
                     Route::get('/{id}', [BillCategoriesController::class, 'detail']);
                     Route::put('/{id}', [BillCategoriesController::class, 'update']);
                     Route::delete('/{id}', [BillCategoriesController::class, 'delete']);
+                });
+                Route::prefix('recipient-accounts')->group(function () {
+                    Route::get('/', [BillingInformationController::class, 'index']);
+                    Route::post('/', [BillingInformationController::class, 'store']);
+                    Route::get('/{id}', [BillingInformationController::class, 'show']);
+                    Route::put('/{id}', [BillingInformationController::class, 'update']);
+                    Route::put('/{id}/set-as-default', [BillingInformationController::class, 'setAsDefault']);
+                    Route::delete('/{id}', [BillingInformationController::class, 'delete']);
                 });
                 Route::get('/', [BillsController::class, 'getUpcomingBills']);
                 Route::post('/', [BillsController::class, 'storeBill']);
