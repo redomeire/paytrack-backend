@@ -3,16 +3,17 @@
 namespace App\Models;
 
 use App\Models\bills;
-use App\Models\bill_categories;
+use Illuminate\Support\Str;
 use App\Models\notification;
+use App\Models\bill_categories;
 use App\Models\notification_read;
-use Illuminate\Contracts\Auth\CanResetPassword;
+use App\Models\BillingInformation;
+use Laravel\Passport\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
-use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail, CanResetPassword
 {
@@ -90,5 +91,10 @@ class User extends Authenticatable implements MustVerifyEmail, CanResetPassword
     public function billCategories()
     {
         return $this->hasMany(bill_categories::class);
+    }
+
+    public function billingInformation()
+    {
+        return $this->hasMany(BillingInformation::class);
     }
 }
