@@ -51,7 +51,7 @@ Route::prefix('v1')->group(function () {
                     Route::put('/{id}', [BillCategoriesController::class, 'update']);
                     Route::delete('/{id}', [BillCategoriesController::class, 'delete']);
                 });
-                Route::prefix('recipient-accounts')->group(function () {
+                Route::prefix('billing-informations')->group(function () {
                     Route::get('/', [BillingInformationController::class, 'index']);
                     Route::post('/', [BillingInformationController::class, 'store']);
                     Route::get('/{id}', [BillingInformationController::class, 'show']);
