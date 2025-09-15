@@ -26,6 +26,11 @@ class BillingInformation extends Model
         'default'
     ];
 
+    protected $casts = [
+        'details' => 'array',
+        'default' => 'boolean',
+    ];
+
     public static function boot()
     {
         parent::boot();
