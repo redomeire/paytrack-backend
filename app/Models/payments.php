@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use App\Models\bills;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class payments extends Model
 {
     /** @use HasFactory<\Database\Factories\PaymentsFactory> */
     use HasFactory;
+    use Searchable;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -38,5 +40,10 @@ class payments extends Model
     public function bill()
     {
         return $this->belongsTo(bills::class, 'bill_id', 'id');
+    }
+
+    public function searchbleAs()
+    {
+        return 'payments_index';
     }
 }

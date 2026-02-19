@@ -1,15 +1,16 @@
 <?php
 
-use App\Http\Controllers\AnalyticsController;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BillCategoriesController;
-use App\Http\Controllers\BillingInformationController;
 use App\Http\Controllers\BillsController;
 use App\Http\Controllers\MediaController;
-use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\PaymentsController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\NotificationController;
 use Laravel\Passport\Http\Middleware\CheckToken;
+use App\Http\Controllers\BillCategoriesController;
+use App\Http\Controllers\BillingInformationController;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -85,6 +86,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('/summary', [AnalyticsController::class, 'getSummary']);
                 Route::get('/spending-by-category', [AnalyticsController::class, 'getSpendingCountByCategory']);
                 Route::get('/monthly-spending-trend', [AnalyticsController::class, 'getMonthlySpendingTrend']);
+            });
+            Route::prefix('search')->group(function () {
+                Route::get('/', [SearchController::class, 'search']);
             });
         });
         Route::middleware([CheckToken::using('admin:notification:crud', 'admin:user:crud'), 'verified'])->group(function () {

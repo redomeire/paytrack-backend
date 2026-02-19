@@ -2,19 +2,21 @@
 
 namespace App\Models;
 
-use App\Models\User;
-use App\Models\payments;
-use App\Models\bill_series;
-use Illuminate\Support\Str;
-use App\Models\bill_categories;
 use App\Models\BillingInformation;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\bill_categories;
+use App\Models\bill_series;
+use App\Models\payments;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 class bills extends Model
 {
     /** @use HasFactory<\Database\Factories\BillsFactory> */
     use HasFactory;
+    use Searchable;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -75,5 +77,18 @@ class bills extends Model
     public function billingInformation()
     {
         return $this->belongsTo(BillingInformation::class);
+    }
+
+    public function searchableAs()
+    {
+        return 'bills_index';
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->getKey(),
+            'name' => $this->name,
+        ];
     }
 }
